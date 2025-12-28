@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'features/add_item/add_item_screen.dart';
 import 'features/outfit/outfit_screen.dart';
+import 'features/wardrobe/wardrobe_screen.dart';
+
 
 class WardrobeApp extends StatefulWidget {
   const WardrobeApp({super.key});
@@ -17,6 +19,7 @@ class _WardrobeAppState extends State<WardrobeApp> {
     final pages = [
       const AddItemScreen(),
       const OutfitScreen(),
+      const WardrobeScreen(),
     ];
 
     return MaterialApp(
@@ -29,7 +32,9 @@ class _WardrobeAppState extends State<WardrobeApp> {
           destinations: const [
             NavigationDestination(icon: Icon(Icons.add_a_photo), label: 'Add'),
             NavigationDestination(icon: Icon(Icons.checkroom), label: 'Outfit'),
-          ],
+            NavigationDestination(icon: Icon(Icons.inventory_2), label: 'Verwalten'),
+                              ],
+          
         ),
       ),
     );

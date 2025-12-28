@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import '../domain/clothing_item_hive.dart';
+import 'dart:io';
 
 class ClothingRepository {
   Box<ClothingItem> get _box => Hive.box<ClothingItem>('clothing_items');
@@ -25,6 +26,21 @@ class ClothingRepository {
   final items = _box.values.toList()
     ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   return items.first;
+}
+Future<void> deleteItem(String id) async {
+  final item = _box.get(id);
+  if (item != null) {
+    // Datei löschen (wenn vorhanden)
+    try {
+      final f = File(item.imagePath);
+      if (await f.exists()) {
+        await f.delete();
+      }
+    } catch (_) {
+      // ignorieren (z.B. Datei bereits weg)
+    }
+  }
+  await _box.delete(id);
 }
 
 }
