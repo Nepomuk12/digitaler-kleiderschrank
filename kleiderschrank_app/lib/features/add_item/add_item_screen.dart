@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+
 import '../../domain/clothing_item_hive.dart';
+import '../../domain/tag_labels.dart';
 import 'add_item_controller.dart';
 
 class AddItemScreen extends ConsumerStatefulWidget {
@@ -12,27 +15,17 @@ class AddItemScreen extends ConsumerStatefulWidget {
   ConsumerState<AddItemScreen> createState() => _AddItemScreenState();
 }
 
-String categoryLabel(ClothingCategory c) {
-  switch (c) {
-    case ClothingCategory.top:
-      return 'Oberteile (inkl. Kleider)';
-    case ClothingCategory.bottom:
-      return 'Unterteile (inkl. Strumpfhosen)';
-    case ClothingCategory.outerwear:
-      return 'Jacken / Mäntel';
-    case ClothingCategory.shoes:
-      return 'Schuhe / Stiefel';
-  }
-}
-
 class _AddItemScreenState extends ConsumerState<AddItemScreen> {
   ClothingCategory category = ClothingCategory.top;
+
+  ColorTag? selectedColor;
+  TopType? selectedTopType;
+  BottomType? selectedBottomType;
+  ShoeType? selectedShoeType;
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(addItemControllerProvider);
-    final latest = ref.read(clothingRepoProvider).latestItem();
-
 
     ref.listen(addItemControllerProvider, (_, next) {
       next.whenOrNull(
@@ -40,10 +33,66 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
           SnackBar(content: Text('Fehler: $e')),
         ),
       );
-      if (next is AsyncData) {
-        // optional: Erfolgsmeldung, aber nur wenn gerade nicht loading
-      }
     });
+
+    Widget typeDropdown() {
+      switch (category) {
+        case ClothingCategory.top:
+          return DropdownButtonFormField<TopType>(
+            value: selectedTopType,
+            items: TopType.values
+                .map((t) => DropdownMenuItem(
+                      value: t,
+                      child: Text(topTypeLabel(t)),
+                    ))
+                .toList(),
+            onChanged: (v) => setState(() => selectedTopType = v),
+            decoration: const InputDecoration(
+              labelText: 'Typ (Oberteil)',
+              border: OutlineInputBorder(),
+            ),
+          );
+
+        case ClothingCategory.bottom:
+          return DropdownButtonFormField<BottomType>(
+            value: selectedBottomType,
+            items: BottomType.values
+                .map((t) => DropdownMenuItem(
+                      value: t,
+                      child: Text(bottomTypeLabel(t)),
+                    ))
+                .toList(),
+            onChanged: (v) => setState(() => selectedBottomType = v),
+            decoration: const InputDecoration(
+              labelText: 'Typ (Unterteil)',
+              border: OutlineInputBorder(),
+            ),
+          );
+
+        case ClothingCategory.shoes:
+          return DropdownButtonFormField<ShoeType>(
+            value: selectedShoeType,
+            items: ShoeType.values
+                .map((t) => DropdownMenuItem(
+                      value: t,
+                      child: Text(shoeTypeLabel(t)),
+                    ))
+                .toList(),
+            onChanged: (v) => setState(() => selectedShoeType = v),
+            decoration: const InputDecoration(
+              labelText: 'Typ (Schuhe)',
+              border: OutlineInputBorder(),
+            ),
+          );
+
+        case ClothingCategory.outerwear:
+          // Outerwear-Typen kommen später; vorerst kein Typ-Dropdown.
+          return const SizedBox.shrink();
+      }
+    }
+
+    // Optionales Preview vom letzten Item (nur wenn du es bereits eingebaut hast)
+    final latest = ref.read(clothingRepoProvider).latestItem();
 
     return SafeArea(
       child: Padding(
@@ -57,11 +106,57 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
             ),
             const SizedBox(height: 16),
 
+            // Kategorie
+            DropdownButtonFormField<ClothingCategory>(
+              value: category,
+              items: ClothingCategory.values
+                  .map((c) => DropdownMenuItem(
+                        value: c,
+                        child: Text(categoryLabel(c)), // <- statt c.name
+                      ))
+                  .toList(),
+              onChanged: (v) => setState(() {
+                category = v ?? category;
+                // Typ-Auswahl zurücksetzen, damit nichts „falsch“ hängen bleibt
+                selectedTopType = null;
+                selectedBottomType = null;
+                selectedShoeType = null;
+              }),
+              decoration: const InputDecoration(
+                labelText: 'Kategorie',
+                border: OutlineInputBorder(),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Farbe
+            DropdownButtonFormField<ColorTag>(
+              value: selectedColor,
+              items: ColorTag.values
+                  .map((c) => DropdownMenuItem(
+                        value: c,
+                        child: Text(colorLabel(c)),
+                      ))
+                  .toList(),
+              onChanged: (v) => setState(() => selectedColor = v),
+              decoration: const InputDecoration(
+                labelText: 'Farbe',
+                border: OutlineInputBorder(),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Typ (abhängig von Kategorie)
+            typeDropdown(),
+
+            const SizedBox(height: 16),
+
+            // Optional: Preview vom letzten Item (wenn latestItem() im Repo vorhanden ist)
             if (latest != null) ...[
-              const Text('Letztes Item:', style: TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
               SizedBox(
-                height: 140,
+                height: 120,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.file(
@@ -73,29 +168,17 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
               const SizedBox(height: 16),
             ],
 
-            DropdownButtonFormField<ClothingCategory>(
-              value: category,
-              items: ClothingCategory.values
-                  .map((c) => DropdownMenuItem(
-                        value: c,
-                        child: Text(categoryLabel(c)),
-                      ))
-                  .toList(),
-              onChanged: (v) => setState(() => category = v ?? category),
-              decoration: const InputDecoration(
-                labelText: 'Kategorie',
-                border: OutlineInputBorder(),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
+            // Kamera
             ElevatedButton.icon(
               onPressed: state.isLoading
                   ? null
                   : () => ref.read(addItemControllerProvider.notifier).addItem(
                         category: category,
                         source: ImageSource.camera,
+                        color: selectedColor,
+                        topType: selectedTopType,
+                        bottomType: selectedBottomType,
+                        shoeType: selectedShoeType,
                       ),
               icon: const Icon(Icons.photo_camera),
               label: const Text('Mit Kamera fotografieren'),
@@ -103,12 +186,17 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
 
             const SizedBox(height: 8),
 
+            // Galerie
             OutlinedButton.icon(
               onPressed: state.isLoading
                   ? null
                   : () => ref.read(addItemControllerProvider.notifier).addItem(
                         category: category,
                         source: ImageSource.gallery,
+                        color: selectedColor,
+                        topType: selectedTopType,
+                        bottomType: selectedBottomType,
+                        shoeType: selectedShoeType,
                       ),
               icon: const Icon(Icons.photo_library),
               label: const Text('Aus Galerie wählen'),
@@ -116,10 +204,10 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
 
             const SizedBox(height: 16),
             if (state.isLoading) const LinearProgressIndicator(),
-            
+
             const Spacer(),
             const Text(
-              'MVP: Foto + Kategorie speichern (Hive).',
+              'MVP+: Foto + Kategorie + Farbe + Typ speichern (Hive).',
               style: TextStyle(color: Colors.black54),
             ),
           ],

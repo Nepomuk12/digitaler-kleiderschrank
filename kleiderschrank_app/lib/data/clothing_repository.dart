@@ -42,5 +42,8 @@ Future<void> deleteItem(String id) async {
   }
   await _box.delete(id);
 }
+Future<void> upsertItem(ClothingItem item) async {
+  await _box.put(item.id, item);
+}
 
 }

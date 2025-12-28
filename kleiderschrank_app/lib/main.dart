@@ -11,6 +11,10 @@ Future<void> main() async {
   await Hive.initFlutter();
   Hive.registerAdapter(ClothingCategoryAdapter());
   Hive.registerAdapter(ClothingItemAdapter());
+  Hive.registerAdapter(ColorTagAdapter());
+  Hive.registerAdapter(TopTypeAdapter());
+  Hive.registerAdapter(BottomTypeAdapter());
+  Hive.registerAdapter(ShoeTypeAdapter());
 
   await Hive.openBox<ClothingItem>('clothing_items');
 

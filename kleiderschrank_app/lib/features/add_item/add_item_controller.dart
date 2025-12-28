@@ -27,7 +27,11 @@ class AddItemController extends StateNotifier<AsyncValue<void>> {
   Future<void> addItem({
     required ClothingCategory category,
     required ImageSource source,
-  }) async {
+    ColorTag? color,
+    TopType? topType,
+    BottomType? bottomType,
+    ShoeType? shoeType,
+                       }) async {
     state = const AsyncLoading();
     try {
       final XFile? picked = await _picker.pickImage(
@@ -58,7 +62,12 @@ class AddItemController extends StateNotifier<AsyncValue<void>> {
         imagePath: newPath,
         createdAt: DateTime.now().millisecondsSinceEpoch,
         tags: const [],
+        color: color,
+        topType: topType,
+        bottomType: bottomType,
+        shoeType: shoeType,
       );
+
 
       await _repo.insertItem(item);
 
