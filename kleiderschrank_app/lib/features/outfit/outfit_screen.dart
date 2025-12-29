@@ -145,7 +145,7 @@ class _SwipeImage extends StatelessWidget {
         child: item == null
             ? const SizedBox.shrink()
             : Image.file(
-                File(item!.imagePath),
+                File(item!.normalizedImagePath),
                 fit: BoxFit.cover,
               ),
       ),

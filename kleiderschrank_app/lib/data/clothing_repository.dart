@@ -32,7 +32,7 @@ Future<void> deleteItem(String id) async {
   if (item != null) {
     // Datei löschen (wenn vorhanden)
     try {
-      final f = File(item.imagePath);
+      final f = File(item.normalizedImagePath);
       if (await f.exists()) {
         await f.delete();
       }

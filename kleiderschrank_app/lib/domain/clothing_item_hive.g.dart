@@ -26,13 +26,15 @@ class ClothingItemAdapter extends TypeAdapter<ClothingItem> {
       topType: fields[6] as TopType?,
       bottomType: fields[7] as BottomType?,
       shoeType: fields[8] as ShoeType?,
+      rawImagePath: fields[9] as String?,
+      normalizedImagePath: fields[10] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, ClothingItem obj) {
     writer
-      ..writeByte(9)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -50,7 +52,11 @@ class ClothingItemAdapter extends TypeAdapter<ClothingItem> {
       ..writeByte(7)
       ..write(obj.bottomType)
       ..writeByte(8)
-      ..write(obj.shoeType);
+      ..write(obj.shoeType)
+      ..writeByte(9)
+      ..write(obj.rawImagePath)
+      ..writeByte(10)
+      ..write(obj.normalizedImagePath);
   }
 
   @override

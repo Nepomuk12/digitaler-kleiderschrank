@@ -224,6 +224,13 @@ class ClothingItem extends HiveObject {
   @HiveField(8)
   final ShoeType? shoeType;
 
+  @HiveField(9)
+  final String? rawImagePath;
+
+  @HiveField(10)
+  final String normalizedImagePath;
+
+
   ClothingItem({
     required this.id,
     required this.category,
@@ -234,5 +241,8 @@ class ClothingItem extends HiveObject {
     this.topType,
     this.bottomType,
     this.shoeType,
+    this.rawImagePath,
+    required this.normalizedImagePath,
+
   });
 }

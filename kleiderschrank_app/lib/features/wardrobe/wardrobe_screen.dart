@@ -70,7 +70,7 @@ class WardrobeScreen extends ConsumerWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: Image.file(
-                    File(it.imagePath),
+                    File(it.normalizedImagePath),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -243,17 +243,26 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
                   icon: const Icon(Icons.save),
                   label: const Text('Speichern'),
                   onPressed: () async {
-                    final updated = ClothingItem(
-                      id: widget.item.id,
-                      category: category,
-                      imagePath: widget.item.imagePath,
-                      createdAt: widget.item.createdAt,
-                      tags: widget.item.tags,
-                      color: color,
-                      topType: topType,
-                      bottomType: bottomType,
-                      shoeType: shoeType,
-                    );
+             final updated = ClothingItem(
+              id: widget.item.id,
+              category: category,
+
+              // Übergang
+              imagePath: widget.item.normalizedImagePath,
+
+              // Pflichtfelder korrekt weiterreichen
+              rawImagePath: widget.item.rawImagePath,
+              normalizedImagePath: widget.item.normalizedImagePath,
+
+              createdAt: widget.item.createdAt,
+              tags: widget.item.tags,
+              color: color,
+              topType: topType,
+              bottomType: bottomType,
+              shoeType: shoeType,
+            );
+
+
 
                     await repo.upsertItem(updated);
                     if (context.mounted) Navigator.pop(context);

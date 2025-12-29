@@ -7,6 +7,9 @@ import 'package:image_picker/image_picker.dart';
 import '../../domain/clothing_item_hive.dart';
 import '../../domain/tag_labels.dart';
 import 'add_item_controller.dart';
+import 'package:image_cropper/image_cropper.dart';
+import '../../services/image_normalizer.dart';
+
 
 class AddItemScreen extends ConsumerStatefulWidget {
   const AddItemScreen({super.key});
@@ -160,7 +163,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.file(
-                    File(latest.imagePath),
+                    File(latest.normalizedImagePath),
                     fit: BoxFit.cover,
                   ),
                 ),

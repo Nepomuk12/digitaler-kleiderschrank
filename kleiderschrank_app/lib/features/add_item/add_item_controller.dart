@@ -1,12 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../data/clothing_repository.dart';
 import '../../domain/clothing_item_hive.dart';
+import '../../services/image_normalizer.dart';
 
 final clothingRepoProvider = Provider<ClothingRepository>((ref) {
   return ClothingRepository();
@@ -14,8 +16,8 @@ final clothingRepoProvider = Provider<ClothingRepository>((ref) {
 
 final addItemControllerProvider =
     StateNotifierProvider<AddItemController, AsyncValue<void>>((ref) {
-  return AddItemController(ref.read(clothingRepoProvider));
-});
+      return AddItemController(ref.read(clothingRepoProvider));
+    });
 
 class AddItemController extends StateNotifier<AsyncValue<void>> {
   AddItemController(this._repo) : super(const AsyncData(null));
@@ -31,12 +33,12 @@ class AddItemController extends StateNotifier<AsyncValue<void>> {
     TopType? topType,
     BottomType? bottomType,
     ShoeType? shoeType,
-                       }) async {
+  }) async {
     state = const AsyncLoading();
     try {
       final XFile? picked = await _picker.pickImage(
         source: source,
-        imageQuality: 90,
+        imageQuality: 95,
       );
 
       if (picked == null) {
@@ -44,7 +46,23 @@ class AddItemController extends StateNotifier<AsyncValue<void>> {
         return;
       }
 
-      // Ziel: Bild dauerhaft in App-Speicher ablegen
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: picked.path,
+        compressFormat: ImageCompressFormat.jpg,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Zuschneiden',
+            lockAspectRatio: false,
+            hideBottomControls: false,
+          ),
+        ],
+      );
+
+      if (cropped == null) {
+        state = const AsyncData(null);
+        return;
+      }
+
       final dir = await getApplicationDocumentsDirectory();
       final imagesDir = Directory('${dir.path}/images');
       if (!await imagesDir.exists()) {
@@ -52,14 +70,24 @@ class AddItemController extends StateNotifier<AsyncValue<void>> {
       }
 
       final id = _uuid.v4();
-      final newPath = '${imagesDir.path}/$id.jpg';
 
-      await File(picked.path).copy(newPath);
+      final rawPath = '${imagesDir.path}/${id}_raw.jpg';
+      await File(cropped.path).copy(rawPath);
+
+      final normalizedPath = '${imagesDir.path}/${id}_norm.jpg';
+      await ImageNormalizer.resizeToMaxPixels(
+        input: File(rawPath),
+        output: File(normalizedPath),
+        maxPixels: 2000000,
+        jpegQuality: 85,
+      );
 
       final item = ClothingItem(
         id: id,
         category: category,
-        imagePath: newPath,
+        imagePath: normalizedPath, // Übergang/Legacy
+        rawImagePath: rawPath,
+        normalizedImagePath: normalizedPath,
         createdAt: DateTime.now().millisecondsSinceEpoch,
         tags: const [],
         color: color,
@@ -68,9 +96,7 @@ class AddItemController extends StateNotifier<AsyncValue<void>> {
         shoeType: shoeType,
       );
 
-
       await _repo.insertItem(item);
-
       state = const AsyncData(null);
     } catch (e, st) {
       state = AsyncError(e, st);
