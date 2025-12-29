@@ -230,6 +230,9 @@ class ClothingItem extends HiveObject {
   @HiveField(10)
   final String normalizedImagePath;
 
+  /// Freitext: Marke / Besonderheiten (ein Feld)
+  @HiveField(11)
+  final String? brandNotes;
 
   ClothingItem({
     required this.id,
@@ -243,6 +246,6 @@ class ClothingItem extends HiveObject {
     this.shoeType,
     this.rawImagePath,
     required this.normalizedImagePath,
-
+    this.brandNotes,
   });
 }

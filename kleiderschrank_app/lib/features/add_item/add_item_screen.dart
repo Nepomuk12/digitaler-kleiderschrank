@@ -7,9 +7,6 @@ import 'package:image_picker/image_picker.dart';
 import '../../domain/clothing_item_hive.dart';
 import '../../domain/tag_labels.dart';
 import 'add_item_controller.dart';
-import 'package:image_cropper/image_cropper.dart';
-import '../../services/image_normalizer.dart';
-
 
 class AddItemScreen extends ConsumerStatefulWidget {
   const AddItemScreen({super.key});
@@ -25,6 +22,14 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
   TopType? selectedTopType;
   BottomType? selectedBottomType;
   ShoeType? selectedShoeType;
+
+  final TextEditingController _brandNotesCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _brandNotesCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,132 +94,162 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
           );
 
         case ClothingCategory.outerwear:
-          // Outerwear-Typen kommen später; vorerst kein Typ-Dropdown.
           return const SizedBox.shrink();
       }
     }
 
-    // Optionales Preview vom letzten Item (nur wenn du es bereits eingebaut hast)
+    // Optionales Preview vom letzten Item (nur wenn im Repo vorhanden)
     final latest = ref.read(clothingRepoProvider).latestItem();
 
+    Future<void> add(ImageSource source) async {
+      await ref.read(addItemControllerProvider.notifier).addItem(
+            category: category,
+            source: source,
+            color: selectedColor,
+            topType: selectedTopType,
+            bottomType: selectedBottomType,
+            shoeType: selectedShoeType,
+            brandNotes: _brandNotesCtrl.text.trim().isEmpty
+                ? null
+                : _brandNotesCtrl.text.trim(),
+          );
+
+      // Komfort: Feld nach erfolgreichem Speichern leeren
+      if (mounted) {
+        _brandNotesCtrl.clear();
+      }
+    }
+
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Kleidung hinzufügen',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: 16 + MediaQuery.of(context).viewInsets.bottom,
             ),
-            const SizedBox(height: 16),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Kleidung hinzufügen',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 16),
 
-            // Kategorie
-            DropdownButtonFormField<ClothingCategory>(
-              value: category,
-              items: ClothingCategory.values
-                  .map((c) => DropdownMenuItem(
-                        value: c,
-                        child: Text(categoryLabel(c)), // <- statt c.name
-                      ))
-                  .toList(),
-              onChanged: (v) => setState(() {
-                category = v ?? category;
-                // Typ-Auswahl zurücksetzen, damit nichts „falsch“ hängen bleibt
-                selectedTopType = null;
-                selectedBottomType = null;
-                selectedShoeType = null;
-              }),
-              decoration: const InputDecoration(
-                labelText: 'Kategorie',
-                border: OutlineInputBorder(),
-              ),
-            ),
+                    // Kategorie
+                    DropdownButtonFormField<ClothingCategory>(
+                      value: category,
+                      items: ClothingCategory.values
+                          .map((c) => DropdownMenuItem(
+                                value: c,
+                                child: Text(categoryLabel(c)),
+                              ))
+                          .toList(),
+                      onChanged: (v) => setState(() {
+                        category = v ?? category;
+                        selectedTopType = null;
+                        selectedBottomType = null;
+                        selectedShoeType = null;
+                      }),
+                      decoration: const InputDecoration(
+                        labelText: 'Kategorie',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
 
-            const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-            // Farbe
-            DropdownButtonFormField<ColorTag>(
-              value: selectedColor,
-              items: ColorTag.values
-                  .map((c) => DropdownMenuItem(
-                        value: c,
-                        child: Text(colorLabel(c)),
-                      ))
-                  .toList(),
-              onChanged: (v) => setState(() => selectedColor = v),
-              decoration: const InputDecoration(
-                labelText: 'Farbe',
-                border: OutlineInputBorder(),
-              ),
-            ),
+                    // Farbe
+                    DropdownButtonFormField<ColorTag>(
+                      value: selectedColor,
+                      items: ColorTag.values
+                          .map((c) => DropdownMenuItem(
+                                value: c,
+                                child: Text(colorLabel(c)),
+                              ))
+                          .toList(),
+                      onChanged: (v) => setState(() => selectedColor = v),
+                      decoration: const InputDecoration(
+                        labelText: 'Farbe',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
 
-            const SizedBox(height: 12),
+                    const SizedBox(height: 12),
 
-            // Typ (abhängig von Kategorie)
-            typeDropdown(),
+                    // Typ (abhängig von Kategorie)
+                    typeDropdown(),
 
-            const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
-            // Optional: Preview vom letzten Item (wenn latestItem() im Repo vorhanden ist)
-            if (latest != null) ...[
-              SizedBox(
-                height: 120,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    File(latest.normalizedImagePath),
-                    fit: BoxFit.cover,
-                  ),
+                    // Marke/Notizen
+                    TextField(
+                      controller: _brandNotesCtrl,
+                      textInputAction: TextInputAction.done,
+                      decoration: const InputDecoration(
+                        labelText: 'Marke/Notizen',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Optional Preview
+                    if (latest != null) ...[
+                      SizedBox(
+                        height: 120,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            File(latest.normalizedImagePath),
+                            fit: BoxFit.cover,
+                            cacheWidth: 900,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Kamera
+                    ElevatedButton.icon(
+                      onPressed:
+                          state.isLoading ? null : () => add(ImageSource.camera),
+                      icon: const Icon(Icons.photo_camera),
+                      label: const Text('Mit Kamera fotografieren'),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Galerie
+                    OutlinedButton.icon(
+                      onPressed: state.isLoading
+                          ? null
+                          : () => add(ImageSource.gallery),
+                      icon: const Icon(Icons.photo_library),
+                      label: const Text('Aus Galerie wählen'),
+                    ),
+
+                    const SizedBox(height: 16),
+                    if (state.isLoading) const LinearProgressIndicator(),
+
+                    const Spacer(),
+                    const Text(
+                      'Version: MVP+ BackUp + Brand (c) 29.12.2025 C.Bohne',
+                      style: TextStyle(color: Colors.black54),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-            ],
-
-            // Kamera
-            ElevatedButton.icon(
-              onPressed: state.isLoading
-                  ? null
-                  : () => ref.read(addItemControllerProvider.notifier).addItem(
-                        category: category,
-                        source: ImageSource.camera,
-                        color: selectedColor,
-                        topType: selectedTopType,
-                        bottomType: selectedBottomType,
-                        shoeType: selectedShoeType,
-                      ),
-              icon: const Icon(Icons.photo_camera),
-              label: const Text('Mit Kamera fotografieren'),
             ),
-
-            const SizedBox(height: 8),
-
-            // Galerie
-            OutlinedButton.icon(
-              onPressed: state.isLoading
-                  ? null
-                  : () => ref.read(addItemControllerProvider.notifier).addItem(
-                        category: category,
-                        source: ImageSource.gallery,
-                        color: selectedColor,
-                        topType: selectedTopType,
-                        bottomType: selectedBottomType,
-                        shoeType: selectedShoeType,
-                      ),
-              icon: const Icon(Icons.photo_library),
-              label: const Text('Aus Galerie wählen'),
-            ),
-
-            const SizedBox(height: 16),
-            if (state.isLoading) const LinearProgressIndicator(),
-
-            const Spacer(),
-            const Text(
-              'MVP+: Foto + Kategorie + Farbe + Typ speichern (Hive).',
-              style: TextStyle(color: Colors.black54),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import '../../domain/tag_labels.dart';
+
 import '../../domain/clothing_item_hive.dart';
+import '../../domain/tag_labels.dart';
 import '../add_item/add_item_controller.dart';
 
 class WardrobeScreen extends ConsumerWidget {
@@ -81,7 +82,8 @@ class WardrobeScreen extends ConsumerWidget {
       ),
     );
   }
-  }
+}
+
 class _EditItemSheet extends ConsumerStatefulWidget {
   const _EditItemSheet({required this.item});
 
@@ -98,6 +100,8 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
   BottomType? bottomType;
   ShoeType? shoeType;
 
+  late final TextEditingController _brandNotesCtrl;
+
   @override
   void initState() {
     super.initState();
@@ -106,6 +110,14 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
     topType = widget.item.topType;
     bottomType = widget.item.bottomType;
     shoeType = widget.item.shoeType;
+
+    _brandNotesCtrl = TextEditingController(text: widget.item.brandNotes ?? '');
+  }
+
+  @override
+  void dispose() {
+    _brandNotesCtrl.dispose();
+    super.dispose();
   }
 
   Widget _typeDropdown() {
@@ -114,7 +126,8 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
         return DropdownButtonFormField<TopType>(
           value: topType,
           items: TopType.values
-              .map((t) => DropdownMenuItem(value: t, child: Text(topTypeLabel(t))))
+              .map((t) =>
+                  DropdownMenuItem(value: t, child: Text(topTypeLabel(t))))
               .toList(),
           onChanged: (v) => setState(() => topType = v),
           decoration: const InputDecoration(
@@ -126,7 +139,8 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
         return DropdownButtonFormField<BottomType>(
           value: bottomType,
           items: BottomType.values
-              .map((t) => DropdownMenuItem(value: t, child: Text(bottomTypeLabel(t))))
+              .map((t) =>
+                  DropdownMenuItem(value: t, child: Text(bottomTypeLabel(t))))
               .toList(),
           onChanged: (v) => setState(() => bottomType = v),
           decoration: const InputDecoration(
@@ -138,7 +152,8 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
         return DropdownButtonFormField<ShoeType>(
           value: shoeType,
           items: ShoeType.values
-              .map((t) => DropdownMenuItem(value: t, child: Text(shoeTypeLabel(t))))
+              .map((t) =>
+                  DropdownMenuItem(value: t, child: Text(shoeTypeLabel(t))))
               .toList(),
           onChanged: (v) => setState(() => shoeType = v),
           decoration: const InputDecoration(
@@ -175,7 +190,8 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
           DropdownButtonFormField<ClothingCategory>(
             value: category,
             items: ClothingCategory.values
-                .map((c) => DropdownMenuItem(value: c, child: Text(categoryLabel(c))))
+                .map((c) =>
+                    DropdownMenuItem(value: c, child: Text(categoryLabel(c))))
                 .toList(),
             onChanged: (v) => setState(() {
               category = v ?? category;
@@ -192,7 +208,8 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
           DropdownButtonFormField<ColorTag>(
             value: color,
             items: ColorTag.values
-                .map((c) => DropdownMenuItem(value: c, child: Text(colorLabel(c))))
+                .map((c) =>
+                    DropdownMenuItem(value: c, child: Text(colorLabel(c))))
                 .toList(),
             onChanged: (v) => setState(() => color = v),
             decoration: const InputDecoration(
@@ -204,6 +221,17 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
 
           // Typ (abhängig von Kategorie)
           _typeDropdown(),
+          const SizedBox(height: 12),
+
+          // Marke/Notizen
+          TextField(
+            controller: _brandNotesCtrl,
+            textInputAction: TextInputAction.done,
+            decoration: const InputDecoration(
+              labelText: 'Marke/Notizen',
+              border: OutlineInputBorder(),
+            ),
+          ),
           const SizedBox(height: 12),
 
           Row(
@@ -243,26 +271,28 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
                   icon: const Icon(Icons.save),
                   label: const Text('Speichern'),
                   onPressed: () async {
-             final updated = ClothingItem(
-              id: widget.item.id,
-              category: category,
+                    final bn = _brandNotesCtrl.text.trim();
+                    final updated = ClothingItem(
+                      id: widget.item.id,
+                      category: category,
 
-              // Übergang
-              imagePath: widget.item.normalizedImagePath,
+                      // Übergang
+                      imagePath: widget.item.normalizedImagePath,
 
-              // Pflichtfelder korrekt weiterreichen
-              rawImagePath: widget.item.rawImagePath,
-              normalizedImagePath: widget.item.normalizedImagePath,
+                      // Pflichtfelder korrekt weiterreichen
+                      rawImagePath: widget.item.rawImagePath,
+                      normalizedImagePath: widget.item.normalizedImagePath,
 
-              createdAt: widget.item.createdAt,
-              tags: widget.item.tags,
-              color: color,
-              topType: topType,
-              bottomType: bottomType,
-              shoeType: shoeType,
-            );
+                      createdAt: widget.item.createdAt,
+                      tags: widget.item.tags,
+                      color: color,
+                      topType: topType,
+                      bottomType: bottomType,
+                      shoeType: shoeType,
 
-
+                      // NEU
+                      brandNotes: bn.isEmpty ? null : bn,
+                    );
 
                     await repo.upsertItem(updated);
                     if (context.mounted) Navigator.pop(context);

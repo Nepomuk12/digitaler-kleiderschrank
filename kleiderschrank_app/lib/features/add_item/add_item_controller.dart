@@ -16,8 +16,8 @@ final clothingRepoProvider = Provider<ClothingRepository>((ref) {
 
 final addItemControllerProvider =
     StateNotifierProvider<AddItemController, AsyncValue<void>>((ref) {
-      return AddItemController(ref.read(clothingRepoProvider));
-    });
+  return AddItemController(ref.read(clothingRepoProvider));
+});
 
 class AddItemController extends StateNotifier<AsyncValue<void>> {
   AddItemController(this._repo) : super(const AsyncData(null));
@@ -33,6 +33,7 @@ class AddItemController extends StateNotifier<AsyncValue<void>> {
     TopType? topType,
     BottomType? bottomType,
     ShoeType? shoeType,
+    String? brandNotes, // <-- NEU
   }) async {
     state = const AsyncLoading();
     try {
@@ -82,6 +83,9 @@ class AddItemController extends StateNotifier<AsyncValue<void>> {
         jpegQuality: 85,
       );
 
+      final cleanedBrandNotes =
+          (brandNotes == null || brandNotes.trim().isEmpty) ? null : brandNotes.trim();
+
       final item = ClothingItem(
         id: id,
         category: category,
@@ -94,6 +98,7 @@ class AddItemController extends StateNotifier<AsyncValue<void>> {
         topType: topType,
         bottomType: bottomType,
         shoeType: shoeType,
+        brandNotes: cleanedBrandNotes, // <-- NEU
       );
 
       await _repo.insertItem(item);
