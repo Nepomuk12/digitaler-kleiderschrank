@@ -27,7 +27,7 @@ class _BackupScreenState extends State<BackupScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Backup erstellt – z.B. in Dropbox speichern.')),
+        const SnackBar(content: Text('Backup erstellt und gespeichert.')),
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -81,7 +81,7 @@ class _BackupScreenState extends State<BackupScreen> {
               FilledButton.icon(
                 onPressed: busy ? null : _export,
                 icon: const Icon(Icons.upload_file),
-                label: const Text('Backup erstellen (z.B. Dropbox)'),
+                label: const Text('Backup erstellen, Cloud speichern'),
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(

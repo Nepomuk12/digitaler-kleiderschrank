@@ -15,96 +15,119 @@ final clothingRepoProvider = Provider<ClothingRepository>((ref) {
 });
 
 final addItemControllerProvider =
-    StateNotifierProvider<AddItemController, AsyncValue<void>>((ref) {
+    StateNotifierProvider<AddItemController, AddItemState>((ref) {
   return AddItemController(ref.read(clothingRepoProvider));
 });
 
-class AddItemController extends StateNotifier<AsyncValue<void>> {
-  AddItemController(this._repo) : super(const AsyncData(null));
+/// 🔹 State enthält jetzt auch Bildpfade
+class AddItemState {
+  final bool loading;
+  final String? rawPath;
+  final String? normalizedPath;
+
+  const AddItemState({
+    this.loading = false,
+    this.rawPath,
+    this.normalizedPath,
+  });
+
+  bool get hasImage => rawPath != null && normalizedPath != null;
+}
+
+class AddItemController extends StateNotifier<AddItemState> {
+  AddItemController(this._repo) : super(const AddItemState());
 
   final ClothingRepository _repo;
   final ImagePicker _picker = ImagePicker();
   final Uuid _uuid = const Uuid();
 
-  Future<void> addItem({
+  /// 📸 Schritt 1: Bild aufnehmen / wählen
+  Future<void> pickImage(ImageSource source) async {
+    state = const AddItemState(loading: true);
+
+    final picked = await _picker.pickImage(source: source, imageQuality: 95);
+    if (picked == null) {
+      state = const AddItemState();
+      return;
+    }
+
+    final cropped = await ImageCropper().cropImage(
+      sourcePath: picked.path,
+      compressFormat: ImageCompressFormat.jpg,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Zuschneiden',
+          lockAspectRatio: false,
+        ),
+      ],
+    );
+
+    if (cropped == null) {
+      state = const AddItemState();
+      return;
+    }
+
+    final dir = await getApplicationDocumentsDirectory();
+    final imagesDir = Directory('${dir.path}/images');
+    if (!await imagesDir.exists()) {
+      await imagesDir.create(recursive: true);
+    }
+
+    final id = _uuid.v4();
+    final rawPath = '${imagesDir.path}/${id}_raw.jpg';
+    final normPath = '${imagesDir.path}/${id}_norm.jpg';
+
+    await File(cropped.path).copy(rawPath);
+
+    await ImageNormalizer.resizeToMaxPixels(
+      input: File(rawPath),
+      output: File(normPath),
+      maxPixels: 1200000,
+      jpegQuality: 80,
+    );
+
+    state = AddItemState(
+      loading: false,
+      rawPath: rawPath,
+      normalizedPath: normPath,
+    );
+  }
+
+  /// 💾 Schritt 4: Item speichern
+  Future<void> saveItem({
     required ClothingCategory category,
-    required ImageSource source,
     ColorTag? color,
     TopType? topType,
     BottomType? bottomType,
     ShoeType? shoeType,
-    String? brandNotes, // <-- NEU
+    String? brandNotes,
   }) async {
-    state = const AsyncLoading();
-    try {
-      final XFile? picked = await _picker.pickImage(
-        source: source,
-        imageQuality: 95,
-      );
+    if (!state.hasImage) return;
 
-      if (picked == null) {
-        state = const AsyncData(null);
-        return;
-      }
+    final id = _uuid.v4();
 
-      final cropped = await ImageCropper().cropImage(
-        sourcePath: picked.path,
-        compressFormat: ImageCompressFormat.jpg,
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Zuschneiden',
-            lockAspectRatio: false,
-            hideBottomControls: false,
-          ),
-        ],
-      );
+    final item = ClothingItem(
+      id: id,
+      category: category,
+      imagePath: state.normalizedPath!,
+      rawImagePath: state.rawPath!,
+      normalizedImagePath: state.normalizedPath!,
+      createdAt: DateTime.now().millisecondsSinceEpoch,
+      tags: const [],
+      color: color,
+      topType: topType,
+      bottomType: bottomType,
+      shoeType: shoeType,
+      brandNotes: brandNotes,
+    );
 
-      if (cropped == null) {
-        state = const AsyncData(null);
-        return;
-      }
+    await _repo.insertItem(item);
 
-      final dir = await getApplicationDocumentsDirectory();
-      final imagesDir = Directory('${dir.path}/images');
-      if (!await imagesDir.exists()) {
-        await imagesDir.create(recursive: true);
-      }
+    // Reset für nächstes Item
+    state = const AddItemState();
+  }
 
-      final id = _uuid.v4();
-
-      final rawPath = '${imagesDir.path}/${id}_raw.jpg';
-      await File(cropped.path).copy(rawPath);
-
-      final normalizedPath = '${imagesDir.path}/${id}_norm.jpg';
-      await ImageNormalizer.resizeToMaxPixels(
-        input: File(rawPath),
-        output: File(normalizedPath),
-        maxPixels: 2000000,
-        jpegQuality: 85,
-      );
-
-      final cleanedBrandNotes =
-          (brandNotes == null || brandNotes.trim().isEmpty) ? null : brandNotes.trim();
-
-      final item = ClothingItem(
-        id: id,
-        category: category,
-        imagePath: normalizedPath, // Übergang/Legacy
-        rawImagePath: rawPath,
-        normalizedImagePath: normalizedPath,
-        createdAt: DateTime.now().millisecondsSinceEpoch,
-        tags: const [],
-        color: color,
-        topType: topType,
-        bottomType: bottomType,
-        shoeType: shoeType,
-        brandNotes: cleanedBrandNotes, // <-- NEU
-      );
-
-      await _repo.insertItem(item);
-      state = const AsyncData(null);
-    } catch (e, st) {
-      state = AsyncError(e, st);
-    }
+  void reset() {
+    state = const AddItemState();
   }
 }
