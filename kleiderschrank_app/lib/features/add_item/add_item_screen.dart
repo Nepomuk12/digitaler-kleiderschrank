@@ -241,7 +241,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
 
                     const Spacer(),
                     const Text(
-                      'Version: MVP+ BackUp + Brand (c) 29.12.2025 C.Bohne',
+                      'V: Filter Outfitscreen (c) 251230 C.Bohne',
                       style: TextStyle(color: Colors.black54),
                     ),
                   ],
