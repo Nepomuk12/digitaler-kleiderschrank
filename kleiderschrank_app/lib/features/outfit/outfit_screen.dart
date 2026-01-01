@@ -65,6 +65,18 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
     }).toList();
   }
 
+  List<T> _sortedByLabel<T>(Set<T> set, String Function(T) label) {
+    final list = set.toList();
+    list.sort((a, b) => label(a).compareTo(label(b)));
+    return list;
+  }
+
+  List<ColorTag> _sortedColors(Set<ColorTag> set) {
+    final list = set.toList();
+    list.sort((a, b) => colorLabel(a).compareTo(colorLabel(b)));
+    return list;
+  }
+
   @override
   Widget build(BuildContext context) {
     final repo = ref.read(clothingRepoProvider);
@@ -73,6 +85,31 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
     final allTops = repo.loadByCategory(ClothingCategory.top);
     final allBottoms = repo.loadByCategory(ClothingCategory.bottom);
     final allShoes = repo.loadByCategory(ClothingCategory.shoes);
+
+    // ===== Dropdown-Optionen NUR aus vorhandenen Items bauen =====
+    final availableTopTypes = _sortedByLabel<TopType>(
+      allTops.map((e) => e.topType).whereType<TopType>().toSet(),
+      topTypeLabel,
+    );
+    final availableTopColors = _sortedColors(
+      allTops.map((e) => e.color).whereType<ColorTag>().toSet(),
+    );
+
+    final availableBottomTypes = _sortedByLabel<BottomType>(
+      allBottoms.map((e) => e.bottomType).whereType<BottomType>().toSet(),
+      bottomTypeLabel,
+    );
+    final availableBottomColors = _sortedColors(
+      allBottoms.map((e) => e.color).whereType<ColorTag>().toSet(),
+    );
+
+    final availableShoeTypes = _sortedByLabel<ShoeType>(
+      allShoes.map((e) => e.shoeType).whereType<ShoeType>().toSet(),
+      shoeTypeLabel,
+    );
+    final availableShoeColors = _sortedColors(
+      allShoes.map((e) => e.color).whereType<ColorTag>().toSet(),
+    );
 
     // Gefiltert (WICHTIG: das ist die Swipe-Liste!)
     final tops = _filterTops(allTops);
@@ -104,7 +141,8 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
           // Foto-/Silhouette-Zone Breite
           final outfitMaxW = (rightW * 0.8).clamp(220.0, 420.0);
 
-          final alignX = rightW <= 0 ? 0.0 : (localAnchorX / rightW) * 2.0 - 1.0;
+          final alignX =
+              rightW <= 0 ? 0.0 : (localAnchorX / rightW) * 2.0 - 1.0;
 
           return Row(
             children: [
@@ -125,18 +163,19 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                         title: 'Oberteil',
                         type: _typeDropdown<TopType>(
                           value: topType,
-                          values: TopType.values,
+                          values: availableTopTypes, // <-- NUR vorhandene
                           label: topTypeLabel,
                           onChanged: (v) => setState(() {
                             topType = v;
-                            topIndex = 0; // wichtig!
+                            topIndex = 0;
                           }),
                         ),
                         color: _colorDropdown(
                           value: topColor,
+                          values: availableTopColors, // <-- NUR vorhandene
                           onChanged: (v) => setState(() {
                             topColor = v;
-                            topIndex = 0; // wichtig!
+                            topIndex = 0;
                           }),
                         ),
                         hint: 'Treffer: ${tops.length}',
@@ -147,7 +186,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                         title: 'Unterteil',
                         type: _typeDropdown<BottomType>(
                           value: bottomType,
-                          values: BottomType.values,
+                          values: availableBottomTypes, // <-- NUR vorhandene
                           label: bottomTypeLabel,
                           onChanged: (v) => setState(() {
                             bottomType = v;
@@ -156,6 +195,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                         ),
                         color: _colorDropdown(
                           value: bottomColor,
+                          values: availableBottomColors, // <-- NUR vorhandene
                           onChanged: (v) => setState(() {
                             bottomColor = v;
                             bottomIndex = 0;
@@ -169,7 +209,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                         title: 'Schuhe',
                         type: _typeDropdown<ShoeType>(
                           value: shoeType,
-                          values: ShoeType.values,
+                          values: availableShoeTypes, // <-- NUR vorhandene
                           label: shoeTypeLabel,
                           onChanged: (v) => setState(() {
                             shoeType = v;
@@ -178,6 +218,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                         ),
                         color: _colorDropdown(
                           value: shoesColor,
+                          values: availableShoeColors, // <-- NUR vorhandene
                           onChanged: (v) => setState(() {
                             shoesColor = v;
                             shoesIndex = 0;
@@ -195,8 +236,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                 width: rightW,
                 child: Stack(
                   children: [
-                    // Silhouette immer sichtbar im Hintergrund,
-                    // wenn ein Segment kein Bild hat, sieht man sie.
+                    // Silhouette immer sichtbar im Hintergrund
                     Positioned.fill(
                       child: IgnorePointer(
                         child: Opacity(
@@ -407,17 +447,18 @@ Widget _typeDropdown<T>({
 
 Widget _colorDropdown({
   required ColorTag? value,
+  required List<ColorTag> values,
   required ValueChanged<ColorTag?> onChanged,
 }) {
   return DropdownButtonFormField<ColorTag>(
     value: value,
     isExpanded: true,
     items: [
-      const DropdownMenuItem(
+      const DropdownMenuItem<ColorTag>(
         value: null,
         child: Text('Farbe: alle'),
       ),
-      ...ColorTag.values.map((c) => DropdownMenuItem(
+      ...values.map((c) => DropdownMenuItem(
             value: c,
             child: Text(colorLabel(c)),
           )),
