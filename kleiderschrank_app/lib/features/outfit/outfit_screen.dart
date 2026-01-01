@@ -29,7 +29,6 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
   ShoeType? shoeType;
   ColorTag? shoesColor;
 
-  // vorbereitet, aber deaktiviert
   bool showOuterwear = false;
 
   int _wrap(int i, int len) {
@@ -40,6 +39,8 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
 
   ClothingItem? _current(List<ClothingItem> list, int index) =>
       list.isEmpty ? null : list[index];
+
+  /* ================= FILTER LOGIC ================= */
 
   List<ClothingItem> _filterTops(List<ClothingItem> items) {
     return items.where((it) {
@@ -65,16 +66,38 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
     }).toList();
   }
 
-  List<T> _sortedByLabel<T>(Set<T> set, String Function(T) label) {
-    final list = set.toList();
-    list.sort((a, b) => label(a).compareTo(label(b)));
-    return list;
+  /* ================= AVAILABLE OPTIONS ================= */
+
+  List<T> _availableTypes<T>(
+    List<ClothingItem> items,
+    T? Function(ClothingItem) extractor,
+    bool Function(ClothingItem) matchesOtherFilter,
+    String Function(T) label,
+  ) {
+    final set = items
+        .where(matchesOtherFilter)
+        .map(extractor)
+        .whereType<T>()
+        .toSet()
+        .toList();
+
+    set.sort((a, b) => label(a).compareTo(label(b)));
+    return set;
   }
 
-  List<ColorTag> _sortedColors(Set<ColorTag> set) {
-    final list = set.toList();
-    list.sort((a, b) => colorLabel(a).compareTo(colorLabel(b)));
-    return list;
+  List<ColorTag> _availableColors(
+    List<ClothingItem> items,
+    bool Function(ClothingItem) matchesOtherFilter,
+  ) {
+    final set = items
+        .where(matchesOtherFilter)
+        .map((e) => e.color)
+        .whereType<ColorTag>()
+        .toSet()
+        .toList();
+
+    set.sort((a, b) => colorLabel(a).compareTo(colorLabel(b)));
+    return set;
   }
 
   @override
@@ -86,37 +109,47 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
     final allBottoms = repo.loadByCategory(ClothingCategory.bottom);
     final allShoes = repo.loadByCategory(ClothingCategory.shoes);
 
-    // ===== Dropdown-Optionen NUR aus vorhandenen Items bauen =====
-    final availableTopTypes = _sortedByLabel<TopType>(
-      allTops.map((e) => e.topType).whereType<TopType>().toSet(),
+    /* ====== DROPDOWN-OPTIONEN (WECHSELSEITIG) ====== */
+
+    final availableTopTypes = _availableTypes<TopType>(
+      allTops,
+      (e) => e.topType,
+      (e) => topColor == null || e.color == topColor,
       topTypeLabel,
     );
-    final availableTopColors = _sortedColors(
-      allTops.map((e) => e.color).whereType<ColorTag>().toSet(),
+    final availableTopColors = _availableColors(
+      allTops,
+      (e) => topType == null || e.topType == topType,
     );
 
-    final availableBottomTypes = _sortedByLabel<BottomType>(
-      allBottoms.map((e) => e.bottomType).whereType<BottomType>().toSet(),
+    final availableBottomTypes = _availableTypes<BottomType>(
+      allBottoms,
+      (e) => e.bottomType,
+      (e) => bottomColor == null || e.color == bottomColor,
       bottomTypeLabel,
     );
-    final availableBottomColors = _sortedColors(
-      allBottoms.map((e) => e.color).whereType<ColorTag>().toSet(),
+    final availableBottomColors = _availableColors(
+      allBottoms,
+      (e) => bottomType == null || e.bottomType == bottomType,
     );
 
-    final availableShoeTypes = _sortedByLabel<ShoeType>(
-      allShoes.map((e) => e.shoeType).whereType<ShoeType>().toSet(),
+    final availableShoeTypes = _availableTypes<ShoeType>(
+      allShoes,
+      (e) => e.shoeType,
+      (e) => shoesColor == null || e.color == shoesColor,
       shoeTypeLabel,
     );
-    final availableShoeColors = _sortedColors(
-      allShoes.map((e) => e.color).whereType<ColorTag>().toSet(),
+    final availableShoeColors = _availableColors(
+      allShoes,
+      (e) => shoeType == null || e.shoeType == shoeType,
     );
 
-    // Gefiltert (WICHTIG: das ist die Swipe-Liste!)
+    /* ====== SWIPE LISTEN ====== */
+
     final tops = _filterTops(allTops);
     final bottoms = _filterBottoms(allBottoms);
     final shoes = _filterShoes(allShoes);
 
-    // Index in gefilterten Listen "safe" halten
     topIndex = _wrap(topIndex, tops.length);
     bottomIndex = _wrap(bottomIndex, bottoms.length);
     shoesIndex = _wrap(shoesIndex, shoes.length);
@@ -128,42 +161,30 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
           final rightW = constraints.maxWidth - leftW;
 
           final height = constraints.maxHeight;
-
-          // Bildanteile: 40/45/15
           final topH = height * 0.40;
           final bottomH = height * 0.45;
           final shoesH = height * 0.15;
 
-          // Bauchnabel-Linie (global) -> relativ zum rechten Bereich
           final anchorX = constraints.maxWidth * 0.60;
           final localAnchorX = (anchorX - leftW).clamp(0.0, rightW);
-
-          // Foto-/Silhouette-Zone Breite
           final outfitMaxW = (rightW * 0.8).clamp(220.0, 420.0);
-
           final alignX =
               rightW <= 0 ? 0.0 : (localAnchorX / rightW) * 2.0 - 1.0;
 
           return Row(
             children: [
-              // ================= FILTERS (SCROLLABLE) =================
+              /* ================= FILTERS ================= */
               SizedBox(
                 width: leftW,
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Column(
                     children: [
-                      _OuterwearBlock(
-                        value: showOuterwear,
-                        onChanged: null, // bewusst deaktiviert
-                      ),
-                      const Divider(),
-
                       _FilterBlock(
                         title: 'Oberteil',
                         type: _typeDropdown<TopType>(
                           value: topType,
-                          values: availableTopTypes, // <-- NUR vorhandene
+                          values: availableTopTypes,
                           label: topTypeLabel,
                           onChanged: (v) => setState(() {
                             topType = v;
@@ -172,21 +193,19 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                         ),
                         color: _colorDropdown(
                           value: topColor,
-                          values: availableTopColors, // <-- NUR vorhandene
+                          values: availableTopColors,
                           onChanged: (v) => setState(() {
                             topColor = v;
                             topIndex = 0;
                           }),
                         ),
-                        hint: 'Treffer: ${tops.length}',
                       ),
                       const Divider(),
-
                       _FilterBlock(
                         title: 'Unterteil',
                         type: _typeDropdown<BottomType>(
                           value: bottomType,
-                          values: availableBottomTypes, // <-- NUR vorhandene
+                          values: availableBottomTypes,
                           label: bottomTypeLabel,
                           onChanged: (v) => setState(() {
                             bottomType = v;
@@ -195,21 +214,19 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                         ),
                         color: _colorDropdown(
                           value: bottomColor,
-                          values: availableBottomColors, // <-- NUR vorhandene
+                          values: availableBottomColors,
                           onChanged: (v) => setState(() {
                             bottomColor = v;
                             bottomIndex = 0;
                           }),
                         ),
-                        hint: 'Treffer: ${bottoms.length}',
                       ),
                       const Divider(),
-
                       _FilterBlock(
                         title: 'Schuhe',
                         type: _typeDropdown<ShoeType>(
                           value: shoeType,
-                          values: availableShoeTypes, // <-- NUR vorhandene
+                          values: availableShoeTypes,
                           label: shoeTypeLabel,
                           onChanged: (v) => setState(() {
                             shoeType = v;
@@ -218,25 +235,23 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                         ),
                         color: _colorDropdown(
                           value: shoesColor,
-                          values: availableShoeColors, // <-- NUR vorhandene
+                          values: availableShoeColors,
                           onChanged: (v) => setState(() {
                             shoesColor = v;
                             shoesIndex = 0;
                           }),
                         ),
-                        hint: 'Treffer: ${shoes.length}',
                       ),
                     ],
                   ),
                 ),
               ),
 
-              // ================= OUTFIT (mit Silhouette im Hintergrund) =================
+              /* ================= OUTFIT ================= */
               SizedBox(
                 width: rightW,
                 child: Stack(
                   children: [
-                    // Silhouette immer sichtbar im Hintergrund
                     Positioned.fill(
                       child: IgnorePointer(
                         child: Opacity(
@@ -247,21 +262,19 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                               width: outfitMaxW,
                               child: const FittedBox(
                                 fit: BoxFit.contain,
-                                child: Icon(Icons.woman, color: Colors.grey),
+                                child: Icon(Icons.woman),
                               ),
                             ),
                           ),
                         ),
                       ),
                     ),
-
                     Column(
                       children: [
                         _SwipeImage(
                           height: topH,
                           item: _current(tops, topIndex),
-                          localAnchorX: localAnchorX,
-                          rightW: rightW,
+                          alignX: alignX,
                           outfitMaxW: outfitMaxW,
                           onPrev: () => setState(() => topIndex--),
                           onNext: () => setState(() => topIndex++),
@@ -269,8 +282,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                         _SwipeImage(
                           height: bottomH,
                           item: _current(bottoms, bottomIndex),
-                          localAnchorX: localAnchorX,
-                          rightW: rightW,
+                          alignX: alignX,
                           outfitMaxW: outfitMaxW,
                           onPrev: () => setState(() => bottomIndex--),
                           onNext: () => setState(() => bottomIndex++),
@@ -278,8 +290,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                         _SwipeImage(
                           height: shoesH,
                           item: _current(shoes, shoesIndex),
-                          localAnchorX: localAnchorX,
-                          rightW: rightW,
+                          alignX: alignX,
                           outfitMaxW: outfitMaxW,
                           onPrev: () => setState(() => shoesIndex--),
                           onNext: () => setState(() => shoesIndex++),
@@ -303,8 +314,7 @@ class _SwipeImage extends StatelessWidget {
   const _SwipeImage({
     required this.height,
     required this.item,
-    required this.localAnchorX,
-    required this.rightW,
+    required this.alignX,
     required this.outfitMaxW,
     required this.onPrev,
     required this.onNext,
@@ -312,16 +322,13 @@ class _SwipeImage extends StatelessWidget {
 
   final double height;
   final ClothingItem? item;
-  final double localAnchorX;
-  final double rightW;
+  final double alignX;
   final double outfitMaxW;
   final VoidCallback onPrev;
   final VoidCallback onNext;
 
   @override
   Widget build(BuildContext context) {
-    final alignX = rightW <= 0 ? 0.0 : (localAnchorX / rightW) * 2.0 - 1.0;
-
     return GestureDetector(
       onHorizontalDragEnd: (d) {
         if ((d.primaryVelocity ?? 0) > 0) onPrev();
@@ -330,7 +337,6 @@ class _SwipeImage extends StatelessWidget {
       child: SizedBox(
         height: height,
         width: double.infinity,
-        // Wenn kein passendes Item existiert => NICHTS anzeigen (Hintergrund bleibt sichtbar)
         child: item == null
             ? const SizedBox.shrink()
             : Align(
@@ -353,13 +359,11 @@ class _FilterBlock extends StatelessWidget {
     required this.title,
     required this.type,
     required this.color,
-    this.hint,
   });
 
   final String title;
   final Widget type;
   final Widget color;
-  final String? hint;
 
   @override
   Widget build(BuildContext context) {
@@ -368,49 +372,12 @@ class _FilterBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.labelMedium,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (hint != null)
-                Text(
-                  hint!,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-            ],
-          ),
+          Text(title),
           const SizedBox(height: 6),
           type,
           const SizedBox(height: 6),
           color,
         ],
-      ),
-    );
-  }
-}
-
-class _OuterwearBlock extends StatelessWidget {
-  const _OuterwearBlock({
-    required this.value,
-    required this.onChanged,
-  });
-
-  final bool value;
-  final ValueChanged<bool>? onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      title: const Text('Jacke / Mantel'),
-      subtitle: const Text('Kommt später'),
-      trailing: Switch(
-        value: value,
-        onChanged: onChanged, // absichtlich null
       ),
     );
   }
