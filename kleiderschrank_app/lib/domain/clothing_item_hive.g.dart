@@ -241,42 +241,48 @@ class TopTypeAdapter extends TypeAdapter<TopType> {
       case 0:
         return TopType.tshirt;
       case 1:
-        return TopType.blouse;
+        return TopType.PoloShirt;
       case 2:
-        return TopType.shirt;
+        return TopType.blouse;
       case 3:
-        return TopType.tankTop;
+        return TopType.shirt;
       case 4:
-        return TopType.longsleeve;
+        return TopType.tankTop;
       case 5:
-        return TopType.sweater;
+        return TopType.longsleeve;
       case 6:
-        return TopType.hoodie;
+        return TopType.sweater;
       case 7:
-        return TopType.cardigan;
+        return TopType.hoodie;
       case 8:
-        return TopType.blazer;
+        return TopType.cardigan;
       case 9:
-        return TopType.tunic;
+        return TopType.blazer;
       case 10:
+        return TopType.tunic;
+      case 111:
         return TopType.turtleneck;
-      case 11:
-        return TopType.cropTop;
       case 12:
-        return TopType.body;
+        return TopType.cropTop;
       case 13:
-        return TopType.dressShort;
+        return TopType.body;
       case 14:
-        return TopType.dressLong;
+        return TopType.dressShort;
       case 15:
-        return TopType.jumpsuit;
+        return TopType.dressLong;
       case 16:
-        return TopType.coordTop;
+        return TopType.jumpsuit;
       case 17:
-        return TopType.sportsTop;
+        return TopType.coordTop;
       case 18:
-        return TopType.tank;
+        return TopType.sportsTop;
       case 19:
+        return TopType.tank;
+      case 20:
+        return TopType.clubwear;
+      case 21:
+        return TopType.homewear;
+      case 22:
         return TopType.other;
       default:
         return TopType.tshirt;
@@ -289,62 +295,71 @@ class TopTypeAdapter extends TypeAdapter<TopType> {
       case TopType.tshirt:
         writer.writeByte(0);
         break;
-      case TopType.blouse:
+      case TopType.PoloShirt:
         writer.writeByte(1);
         break;
-      case TopType.shirt:
+      case TopType.blouse:
         writer.writeByte(2);
         break;
-      case TopType.tankTop:
+      case TopType.shirt:
         writer.writeByte(3);
         break;
-      case TopType.longsleeve:
+      case TopType.tankTop:
         writer.writeByte(4);
         break;
-      case TopType.sweater:
+      case TopType.longsleeve:
         writer.writeByte(5);
         break;
-      case TopType.hoodie:
+      case TopType.sweater:
         writer.writeByte(6);
         break;
-      case TopType.cardigan:
+      case TopType.hoodie:
         writer.writeByte(7);
         break;
-      case TopType.blazer:
+      case TopType.cardigan:
         writer.writeByte(8);
         break;
-      case TopType.tunic:
+      case TopType.blazer:
         writer.writeByte(9);
         break;
-      case TopType.turtleneck:
+      case TopType.tunic:
         writer.writeByte(10);
         break;
-      case TopType.cropTop:
-        writer.writeByte(11);
+      case TopType.turtleneck:
+        writer.writeByte(111);
         break;
-      case TopType.body:
+      case TopType.cropTop:
         writer.writeByte(12);
         break;
-      case TopType.dressShort:
+      case TopType.body:
         writer.writeByte(13);
         break;
-      case TopType.dressLong:
+      case TopType.dressShort:
         writer.writeByte(14);
         break;
-      case TopType.jumpsuit:
+      case TopType.dressLong:
         writer.writeByte(15);
         break;
-      case TopType.coordTop:
+      case TopType.jumpsuit:
         writer.writeByte(16);
         break;
-      case TopType.sportsTop:
+      case TopType.coordTop:
         writer.writeByte(17);
         break;
-      case TopType.tank:
+      case TopType.sportsTop:
         writer.writeByte(18);
         break;
-      case TopType.other:
+      case TopType.tank:
         writer.writeByte(19);
+        break;
+      case TopType.clubwear:
+        writer.writeByte(20);
+        break;
+      case TopType.homewear:
+        writer.writeByte(21);
+        break;
+      case TopType.other:
+        writer.writeByte(22);
         break;
     }
   }
@@ -406,6 +421,12 @@ class BottomTypeAdapter extends TypeAdapter<BottomType> {
       case 18:
         return BottomType.coordBottom;
       case 19:
+        return BottomType.CroppedTrouser;
+      case 20:
+        return BottomType.clubwear;
+      case 21:
+        return BottomType.homewear;
+      case 22:
         return BottomType.other;
       default:
         return BottomType.jeans;
@@ -472,8 +493,17 @@ class BottomTypeAdapter extends TypeAdapter<BottomType> {
       case BottomType.coordBottom:
         writer.writeByte(18);
         break;
-      case BottomType.other:
+      case BottomType.CroppedTrouser:
         writer.writeByte(19);
+        break;
+      case BottomType.clubwear:
+        writer.writeByte(20);
+        break;
+      case BottomType.homewear:
+        writer.writeByte(21);
+        break;
+      case BottomType.other:
+        writer.writeByte(22);
         break;
     }
   }

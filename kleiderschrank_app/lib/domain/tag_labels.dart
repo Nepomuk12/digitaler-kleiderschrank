@@ -54,6 +54,8 @@ String topTypeLabel(TopType t) {
   switch (t) {
     case TopType.tshirt:
       return 'T-Shirt';
+    case TopType.PoloShirt:
+      return 'Polo-Shirt';
     case TopType.blouse:
       return 'Bluse';
     case TopType.shirt:
@@ -90,6 +92,10 @@ String topTypeLabel(TopType t) {
       return 'Sporttop';
     case TopType.tank:
       return 'Tanktop';
+    case TopType.clubwear:
+      return 'Clubwear';
+    case TopType.homewear:
+      return 'Home & Loungewear';  
     case TopType.other:
       return 'Sonstiges';
   }
@@ -135,6 +141,12 @@ String bottomTypeLabel(BottomType b) {
       return 'Thermohose';
     case BottomType.coordBottom:
       return 'Set/Unterteil';
+    case BottomType.CroppedTrouser:
+      return '7/8-Hose';
+    case BottomType.clubwear:
+      return 'Clubwear';    
+    case BottomType.homewear:
+      return 'Home & Loungewear';    
     case BottomType.other:
       return 'Sonstiges';
   }

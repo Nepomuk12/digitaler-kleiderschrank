@@ -62,42 +62,48 @@ enum TopType {
   @HiveField(0)
   tshirt, // T-Shirt
   @HiveField(1)
-  blouse, // Bluse
+  PoloShirt, // Polo-Shirt
   @HiveField(2)
-  shirt, // Hemd
+  blouse, // Bluse
   @HiveField(3)
-  tankTop, // Top/Träger
+  shirt, // Hemd
   @HiveField(4)
-  longsleeve, // Longsleeve
+  tankTop, // Top/Träger
   @HiveField(5)
-  sweater, // Pullover
+  longsleeve, // Longsleeve
   @HiveField(6)
-  hoodie, // Hoodie
+  sweater, // Pullover
   @HiveField(7)
-  cardigan, // Strickjacke/Cardigan
+  hoodie, // Hoodie
   @HiveField(8)
-  blazer, // Blazer
+  cardigan, // Strickjacke/Cardigan
   @HiveField(9)
-  tunic, // Tunika
+  blazer, // Blazer
   @HiveField(10)
+  tunic, // Tunika
+  @HiveField(111)
   turtleneck, // Rollkragen
-  @HiveField(11)
-  cropTop, // Crop-Top
   @HiveField(12)
-  body, // Body
+  cropTop, // Crop-Top
   @HiveField(13)
-  dressShort, // Kleid (kurz)
+  body, // Body
   @HiveField(14)
-  dressLong, // Kleid (lang)
+  dressShort, // Kleid (kurz)
   @HiveField(15)
-  jumpsuit, // Jumpsuit/Overall
+  dressLong, // Kleid (lang)
   @HiveField(16)
-  coordTop, // Set/Oberteil (Co-Ord)
+  jumpsuit, // Jumpsuit/Overall
   @HiveField(17)
-  sportsTop, // Sporttop
+  coordTop, // Set/Oberteil (Co-Ord)
   @HiveField(18)
-  tank, // Tanktop
+  sportsTop, // Sporttop
   @HiveField(19)
+  tank, // Tanktop
+  @HiveField(20)
+  clubwear, // Clubwear, Kinky Outfits
+  @HiveField(21)
+  homewear, // Tops for Home Dresses & Loungewear
+  @HiveField(22)
   other, // Sonstiges
 }
 
@@ -143,6 +149,12 @@ enum BottomType {
   @HiveField(18)
   coordBottom, // Set/Unterteil (Co-Ord)
   @HiveField(19)
+  CroppedTrouser, // 7/8-Hose
+  @HiveField(20)
+  clubwear, // Clubwear, Kinky Outfits
+  @HiveField(21)
+  homewear, // Bottom fpr Home Dresses & Loungewear
+  @HiveField(22) 
   other, // Sonstiges
 }
 
