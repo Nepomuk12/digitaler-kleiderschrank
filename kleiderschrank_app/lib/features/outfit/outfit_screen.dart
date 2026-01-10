@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/clothing_item_hive.dart';
 import '../../domain/tag_labels.dart';
 import '../add_item/add_item_controller.dart';
+import '../../services/outfit_merge_service.dart';
 
 class OutfitScreen extends ConsumerStatefulWidget {
   const OutfitScreen({super.key});
@@ -31,14 +32,21 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
 
   bool showOuterwear = false;
 
+  // Merge menu (unten im Scroll)
+  MergeLayer topLayer = MergeLayer.top; // Top Layer = T-Shirt über Hose
+  MergeLayer bottomLayer = MergeLayer.middle; // Middle Layer = Hosenbund verdeckt
+  MergeLayer shoesLayer = MergeLayer.bottom; // Bottom Layer = Stiefelschaft verdeckt
+
+  final OutfitMergeService _mergeService = const OutfitMergeService();
+
   int _wrap(int i, int len) {
     if (len <= 0) return 0;
     final r = i % len;
     return r < 0 ? r + len : r;
   }
 
-  ClothingItem? _current(List<ClothingItem> list, int index) =>
-      list.isEmpty ? null : list[index];
+  ClothingItem? _current(List<ClothingItem> list, int i) =>
+      list.isEmpty ? null : list[_wrap(i, list.length)];
 
   /* ================= FILTER LOGIC ================= */
 
@@ -66,38 +74,37 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
     }).toList();
   }
 
-  /* ================= AVAILABLE OPTIONS ================= */
-
+  /// Liefert verfügbare Werte (nur die, die tatsächlich vorkommen), optional mit
+  /// zusätzlichem Prädikat (z.B. "nur Farben, die zum ausgewählten Typ passen")
   List<T> _availableTypes<T>(
     List<ClothingItem> items,
-    T? Function(ClothingItem) extractor,
-    bool Function(ClothingItem) matchesOtherFilter,
+    T? Function(ClothingItem) pick,
+    bool Function(ClothingItem) where,
     String Function(T) label,
   ) {
-    final set = items
-        .where(matchesOtherFilter)
-        .map(extractor)
-        .whereType<T>()
-        .toSet()
-        .toList();
-
-    set.sort((a, b) => label(a).compareTo(label(b)));
-    return set;
+    final set = <T>{};
+    for (final it in items) {
+      if (!where(it)) continue;
+      final v = pick(it);
+      if (v != null) set.add(v);
+    }
+    final list = set.toList();
+    list.sort((a, b) => label(a).compareTo(label(b)));
+    return list;
   }
 
   List<ColorTag> _availableColors(
     List<ClothingItem> items,
-    bool Function(ClothingItem) matchesOtherFilter,
+    bool Function(ClothingItem) where,
   ) {
-    final set = items
-        .where(matchesOtherFilter)
-        .map((e) => e.color)
-        .whereType<ColorTag>()
-        .toSet()
-        .toList();
-
-    set.sort((a, b) => colorLabel(a).compareTo(colorLabel(b)));
-    return set;
+    final set = <ColorTag>{};
+    for (final it in items) {
+      if (!where(it)) continue;
+      if (it.color != null) set.add(it.color!);
+    }
+    final list = set.toList();
+    list.sort((a, b) => colorLabel(a).compareTo(colorLabel(b)));
+    return list;
   }
 
   @override
@@ -117,6 +124,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
       (e) => topColor == null || e.color == topColor,
       topTypeLabel,
     );
+
     final availableTopColors = _availableColors(
       allTops,
       (e) => topType == null || e.topType == topType,
@@ -128,6 +136,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
       (e) => bottomColor == null || e.color == bottomColor,
       bottomTypeLabel,
     );
+
     final availableBottomColors = _availableColors(
       allBottoms,
       (e) => bottomType == null || e.bottomType == bottomType,
@@ -139,17 +148,19 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
       (e) => shoesColor == null || e.color == shoesColor,
       shoeTypeLabel,
     );
+
     final availableShoeColors = _availableColors(
       allShoes,
       (e) => shoeType == null || e.shoeType == shoeType,
     );
 
-    /* ====== SWIPE LISTEN ====== */
+    /* ====== FILTERED LISTS ====== */
 
     final tops = _filterTops(allTops);
     final bottoms = _filterBottoms(allBottoms);
     final shoes = _filterShoes(allShoes);
 
+    /* ====== Index clamps (falls Auswahl reduziert wurde) ====== */
     topIndex = _wrap(topIndex, tops.length);
     bottomIndex = _wrap(bottomIndex, bottoms.length);
     shoesIndex = _wrap(shoesIndex, shoes.length);
@@ -157,6 +168,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
     return SafeArea(
       child: LayoutBuilder(
         builder: (context, constraints) {
+          // Layout wie zuvor (oberer Teil wieder wie "perfekt")
           final leftW = (constraints.maxWidth * 0.33).clamp(150.0, 260.0);
           final rightW = constraints.maxWidth - leftW;
 
@@ -173,13 +185,19 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
 
           return Row(
             children: [
-              /* ================= FILTERS ================= */
+              /* ================= FILTER COLUMN ================= */
               SizedBox(
                 width: leftW,
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Column(
                     children: [
+                      _OuterwearBlock(
+                        value: showOuterwear,
+                        onChanged: null, // vorbereitet, aber (noch) deaktiviert
+                      ),
+                      const Divider(),
+
                       _FilterBlock(
                         title: 'Oberteil',
                         type: _typeDropdown<TopType>(
@@ -241,6 +259,18 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                             shoesIndex = 0;
                           }),
                         ),
+                      ),
+
+                      // NEU: unten im Scroll die Layer-Dropdowns + Merge Button (kompakt)
+                      const Divider(),
+                      _MergeBlock(
+                        topLayer: topLayer,
+                        bottomLayer: bottomLayer,
+                        shoesLayer: shoesLayer,
+                        onTopChanged: (v) => setState(() => topLayer = v),
+                        onBottomChanged: (v) => setState(() => bottomLayer = v),
+                        onShoesChanged: (v) => setState(() => shoesLayer = v),
+                        onMerge: () => _handleMerge(tops, bottoms, shoes),
                       ),
                     ],
                   ),
@@ -306,6 +336,233 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
       ),
     );
   }
+
+  Future<void> _handleMerge(
+    List<ClothingItem> tops,
+    List<ClothingItem> bottoms,
+    List<ClothingItem> shoes,
+  ) async {
+    final top = _current(tops, topIndex);
+    final bottom = _current(bottoms, bottomIndex);
+    final shoesIt = _current(shoes, shoesIndex);
+    if (top == null || bottom == null || shoesIt == null) return;
+
+    // Loading
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        content: SizedBox(
+          height: 80,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      ),
+    );
+
+    try {
+      final mergedPath = await _mergeService.mergeToTempPng(
+        top: MergeInput(normalizedImagePath: top.normalizedImagePath, categoryOrder: 0),
+        bottom: MergeInput(normalizedImagePath: bottom.normalizedImagePath, categoryOrder: 1),
+        shoes: MergeInput(normalizedImagePath: shoesIt.normalizedImagePath, categoryOrder: 2),
+        topLayer: topLayer,
+        bottomLayer: bottomLayer,
+        shoesLayer: shoesLayer,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context); // close loading
+
+      await showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Merged Outfit'),
+          content: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.file(
+              File(mergedPath),
+              fit: BoxFit.contain,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Schließen'),
+            ),
+          ],
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Merge fehlgeschlagen')),
+      );
+    }
+  }
+
+  Widget _typeDropdown<T>({
+    required T? value,
+    required List<T> values,
+    required String Function(T) label,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return DropdownButtonFormField<T?>(
+      value: value,
+      isExpanded: true,
+      items: [
+        DropdownMenuItem<T?>(
+          value: null,
+          child: const Text('Typ: alle'),
+        ),
+        ...values.map((t) => DropdownMenuItem<T?>(
+              value: t,
+              child: Text(label(t)),
+            )),
+      ],
+      onChanged: onChanged,
+      decoration: const InputDecoration(
+        border: OutlineInputBorder(),
+        isDense: true,
+      ),
+    );
+  }
+
+  Widget _colorDropdown({
+    required ColorTag? value,
+    required List<ColorTag> values,
+    required ValueChanged<ColorTag?> onChanged,
+  }) {
+    return DropdownButtonFormField<ColorTag?>(
+      value: value,
+      isExpanded: true,
+      items: [
+        const DropdownMenuItem<ColorTag?>(
+          value: null,
+          child: Text('Farbe: alle'),
+        ),
+        ...values.map((c) => DropdownMenuItem<ColorTag?>(
+              value: c,
+              child: Text(colorLabel(c)),
+            )),
+      ],
+      onChanged: onChanged,
+      decoration: const InputDecoration(
+        border: OutlineInputBorder(),
+        isDense: true,
+      ),
+    );
+  }
+}
+
+/* ================= MERGE UI (kompakt) ================= */
+
+// ===== Replace your current _MergeBlock with this version =====
+
+String _layerLabel(MergeLayer l) {
+  switch (l) {
+    case MergeLayer.top:
+      return 'TopLayer';
+    case MergeLayer.middle:
+      return 'MiddleLayer';
+    case MergeLayer.bottom:
+      return 'BottomLayer';
+  }
+}
+
+class _MergeBlock extends StatelessWidget {
+  const _MergeBlock({
+    required this.topLayer,
+    required this.bottomLayer,
+    required this.shoesLayer,
+    required this.onTopChanged,
+    required this.onBottomChanged,
+    required this.onShoesChanged,
+    required this.onMerge,
+  });
+
+  final MergeLayer topLayer;
+  final MergeLayer bottomLayer;
+  final MergeLayer shoesLayer;
+
+  final ValueChanged<MergeLayer> onTopChanged;
+  final ValueChanged<MergeLayer> onBottomChanged;
+  final ValueChanged<MergeLayer> onShoesChanged;
+
+  final VoidCallback onMerge;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Merge', style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+
+          // Design analog zu den Filterblöcken: 1 Dropdown je Kategorie
+          _mergeDropdown(
+            title: 'Oberteil',
+            value: topLayer,
+            onChanged: onTopChanged,
+          ),
+          const SizedBox(height: 8),
+          _mergeDropdown(
+            title: 'Unterteil',
+            value: bottomLayer,
+            onChanged: onBottomChanged,
+          ),
+          const SizedBox(height: 8),
+          _mergeDropdown(
+            title: 'Schuhe',
+            value: shoesLayer,
+            onChanged: onShoesChanged,
+          ),
+
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 40,
+            child: ElevatedButton.icon(
+              onPressed: onMerge,
+              icon: const Icon(Icons.auto_fix_high),
+              label: const Text('Merge'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _mergeDropdown({
+    required String title,
+    required MergeLayer value,
+    required ValueChanged<MergeLayer> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<MergeLayer>(
+          value: value,
+          isExpanded: true,
+          items: MergeLayer.values
+              .map(
+                (l) => DropdownMenuItem(
+                  value: l,
+                  child: Text(_layerLabel(l)),
+                ),
+              )
+              .toList(),
+          onChanged: (v) => v == null ? null : onChanged(v),
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            isDense: true,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 /* ================= WIDGETS ================= */
@@ -343,12 +600,35 @@ class _SwipeImage extends StatelessWidget {
                 alignment: Alignment(alignX, 0),
                 child: SizedBox(
                   width: outfitMaxW,
+                  height: height,
                   child: Image.file(
                     File(item!.normalizedImagePath),
-                    fit: BoxFit.fitHeight,
+                    fit: BoxFit.contain,
                   ),
                 ),
               ),
+      ),
+    );
+  }
+}
+
+class _OuterwearBlock extends StatelessWidget {
+  const _OuterwearBlock({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      title: const Text('Jacke / Mantel'),
+      // subtitle: const Text('Kommt später'),
+      trailing: Switch(
+        value: value,
+        onChanged: onChanged, // bewusst deaktiviert
       ),
     );
   }
@@ -370,70 +650,15 @@ class _FilterBlock extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(title),
-          const SizedBox(height: 6),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
           type,
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           color,
         ],
       ),
     );
   }
-}
-
-/* ================= DROPDOWNS ================= */
-
-Widget _typeDropdown<T>({
-  required T? value,
-  required List<T> values,
-  required String Function(T) label,
-  required ValueChanged<T?> onChanged,
-}) {
-  return DropdownButtonFormField<T>(
-    value: value,
-    isExpanded: true,
-    items: [
-      DropdownMenuItem<T>(
-        value: null,
-        child: const Text('Typ: alle'),
-      ),
-      ...values.map((t) => DropdownMenuItem(
-            value: t,
-            child: Text(label(t)),
-          )),
-    ],
-    onChanged: onChanged,
-    decoration: const InputDecoration(
-      border: OutlineInputBorder(),
-      isDense: true,
-    ),
-  );
-}
-
-Widget _colorDropdown({
-  required ColorTag? value,
-  required List<ColorTag> values,
-  required ValueChanged<ColorTag?> onChanged,
-}) {
-  return DropdownButtonFormField<ColorTag>(
-    value: value,
-    isExpanded: true,
-    items: [
-      const DropdownMenuItem<ColorTag>(
-        value: null,
-        child: Text('Farbe: alle'),
-      ),
-      ...values.map((c) => DropdownMenuItem(
-            value: c,
-            child: Text(colorLabel(c)),
-          )),
-    ],
-    onChanged: onChanged,
-    decoration: const InputDecoration(
-      border: OutlineInputBorder(),
-      isDense: true,
-    ),
-  );
 }

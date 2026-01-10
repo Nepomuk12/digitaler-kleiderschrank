@@ -104,7 +104,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
 
     Widget footer() {
       return const Text(
-        'Version 1.1.2\n'
+        'Version 1.2.0b\n'
         'Release Date: $releaseDate\n'
         'Copyright: C.Bohne',
         textAlign: TextAlign.center,
@@ -153,6 +153,14 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
                           onPressed: () => ctrl.pickImage(ImageSource.gallery),
                           icon: const Icon(Icons.photo_library),
                           label: const Text('Aus Galerie wählen'),
+                        ),
+                        const SizedBox(height: 12),
+                        Center(
+                          child: Image.asset(
+                            'assets/images/foto_manual.png',
+                            height: 260,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ],
 
