@@ -524,8 +524,6 @@ class _MergeBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Merge', style: const TextStyle(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
 
           // Design analog zu den Filterblöcken: 1 Dropdown je Kategorie
           _mergeDropdown(
@@ -546,7 +544,7 @@ class _MergeBlock extends StatelessWidget {
             onChanged: onShoesChanged,
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 7),
           SizedBox(
             height: 40,
             child: Row(
@@ -563,7 +561,7 @@ class _MergeBlock extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: canShareToGemini ? onShareToGemini : null,
                     icon: const Icon(Icons.share),
-                    label: const Text('Share to GPT'),
+                    label: const Text('Share to ChatGPT (1 image)'),
                   ),
                 ),
               ],

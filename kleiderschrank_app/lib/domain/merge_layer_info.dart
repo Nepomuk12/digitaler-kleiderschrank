@@ -20,6 +20,6 @@ class MergeLayerInfo {
   });
 }
 
-enum LayerSlot { top, bottom, shoes }
+enum LayerSlot { top, bottom, shoes, outerwear }
 
 enum WearRelation { over, tuckedInto, into }

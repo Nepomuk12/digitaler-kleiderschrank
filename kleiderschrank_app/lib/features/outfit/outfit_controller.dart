@@ -12,6 +12,7 @@ import '../../domain/clothing_item_hive.dart';
 import '../../domain/merge_layer_info.dart';
 import '../../domain/tag_labels.dart';
 import '../../services/chatgpt_prompt_builder.dart';
+import '../../services/contact_sheet_generator.dart';
 import '../../services/outfit_merge_service.dart';
 
 final outfitControllerProvider = Provider<OutfitController>((ref) {
@@ -34,17 +35,36 @@ class OutfitController {
     await Clipboard.setData(ClipboardData(text: promptText));
     if (!context.mounted) return;
 
-    final xfiles = await _buildShareXFiles(context, selectedLayers);
-    if (xfiles == null || xfiles.isEmpty) return;
+    XFile? contactSheetFile;
+    try {
+      final contactSheetPath = await ContactSheetGenerator().createOutfitContactSheet(
+        layers: selectedLayers,
+        cellSizePx: 768,
+      );
+      contactSheetFile = XFile(contactSheetPath);
+    } catch (_) {
+      contactSheetFile = null;
+    }
 
-    await Share.shareXFiles(
-      xfiles,
-      text: 'Paste the prompt from clipboard to merge these layers.',
-    );
+    if (contactSheetFile != null) {
+      await Share.shareXFiles(
+        [contactSheetFile],
+        text:
+            'Prompt copied to clipboard. Paste it into ChatGPT/Gemini and send with this image.',
+      );
+    } else {
+      final xfiles = await _buildShareXFiles(context, selectedLayers);
+      if (xfiles == null || xfiles.isEmpty) return;
+      await Share.shareXFiles(
+        xfiles,
+        text:
+            'Prompt copied to clipboard. Paste it into ChatGPT/Gemini and send with this image.',
+      );
+    }
 
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Prompt copied. Paste it in GPT.')),
+      const SnackBar(content: Text('Prompt copied. Paste it into ChatGPT/Gemini.')),
     );
   }
 }
