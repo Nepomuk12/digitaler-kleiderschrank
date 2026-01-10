@@ -104,7 +104,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
 
     Widget footer() {
       return const Text(
-        'Version 1.2.0b\n'
+        'Version 1.2.1a\n'
         'Release Date: $releaseDate\n'
         'Copyright: C.Bohne',
         textAlign: TextAlign.center,

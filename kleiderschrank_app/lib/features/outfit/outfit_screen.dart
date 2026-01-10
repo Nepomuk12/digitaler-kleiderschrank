@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/clothing_item_hive.dart';
+import '../../domain/merge_layer_info.dart';
 import '../../domain/tag_labels.dart';
 import '../add_item/add_item_controller.dart';
 import '../../services/outfit_merge_service.dart';
+import 'outfit_controller.dart';
 
 class OutfitScreen extends ConsumerStatefulWidget {
   const OutfitScreen({super.key});
@@ -165,6 +167,23 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
     bottomIndex = _wrap(bottomIndex, bottoms.length);
     shoesIndex = _wrap(shoesIndex, shoes.length);
 
+    final selectedTop = _current(tops, topIndex);
+    final selectedBottom = _current(bottoms, bottomIndex);
+    final selectedShoes = _current(shoes, shoesIndex);
+    const topBottomRelation = WearRelation.over;
+    const bottomShoesRelation = WearRelation.over;
+    final selectedLayers = buildMergeLayerInfoFromSelection(
+      top: selectedTop,
+      bottom: selectedBottom,
+      shoes: selectedShoes,
+      topLayer: topLayer,
+      bottomLayer: bottomLayer,
+      shoesLayer: shoesLayer,
+      topBottomRelation: topBottomRelation,
+      bottomShoesRelation: bottomShoesRelation,
+    );
+    final canShareToGemini = selectedLayers.length == 3;
+
     return SafeArea(
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -271,6 +290,10 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                         onBottomChanged: (v) => setState(() => bottomLayer = v),
                         onShoesChanged: (v) => setState(() => shoesLayer = v),
                         onMerge: () => _handleMerge(tops, bottoms, shoes),
+                        canShareToGemini: canShareToGemini,
+                        onShareToGemini: () => ref
+                            .read(outfitControllerProvider)
+                            .shareToGemini(context, selectedLayers),
                       ),
                     ],
                   ),
@@ -478,6 +501,8 @@ class _MergeBlock extends StatelessWidget {
     required this.onBottomChanged,
     required this.onShoesChanged,
     required this.onMerge,
+    required this.canShareToGemini,
+    required this.onShareToGemini,
   });
 
   final MergeLayer topLayer;
@@ -489,6 +514,8 @@ class _MergeBlock extends StatelessWidget {
   final ValueChanged<MergeLayer> onShoesChanged;
 
   final VoidCallback onMerge;
+  final bool canShareToGemini;
+  final VoidCallback onShareToGemini;
 
   @override
   Widget build(BuildContext context) {
@@ -522,10 +549,24 @@ class _MergeBlock extends StatelessWidget {
           const SizedBox(height: 12),
           SizedBox(
             height: 40,
-            child: ElevatedButton.icon(
-              onPressed: onMerge,
-              icon: const Icon(Icons.auto_fix_high),
-              label: const Text('Merge'),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: onMerge,
+                    icon: const Icon(Icons.auto_fix_high),
+                    label: const Text('Merge'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: canShareToGemini ? onShareToGemini : null,
+                    icon: const Icon(Icons.share),
+                    label: const Text('Share to GPT'),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
