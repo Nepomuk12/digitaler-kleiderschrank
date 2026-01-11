@@ -96,10 +96,10 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
 
       return const Text(
         'Info:\n'
-        '1) Fotos immer aus dem gleichen Abstand, Winkel sowie ähnlichem Licht und gleicher Körperhaltung erstellen\n'
+        '1) Fotos aus gleichem Abstand, Winkel sowie ähnlichem Licht & gleicher Körperhaltung\n'
         '2) Hautfarbener Body hilft bei der späteren Separierung\n'
         '3) Zuschneiden in der App mit Fokus auf Kategorie (z.B. Oberbekleidung mit sichtbarer Ärmellänge)\n'
-        '4) Dann Outfit zusammenstellen',
+        '4) Dann Outfit im nächsten Tab zusammenstellen',
         textAlign: TextAlign.center,
         style: style,
       );
@@ -107,7 +107,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
 
     Widget footer() {
       return const Text(
-        'Version 1.2.2a\n'
+        'Version 1.2.2b\n'
         'Release Date: $releaseDate\n'
         'Copyright: C.Bohne',
         textAlign: TextAlign.center,

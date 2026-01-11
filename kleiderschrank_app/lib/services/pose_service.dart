@@ -21,12 +21,15 @@ KP? _kp(Map<dynamic, dynamic> m, String key) {
 }
 
 class PoseKeypoints {
+  final KP? leftShoulder, rightShoulder;
   final KP? leftHip, rightHip;
   final KP? leftKnee, rightKnee;
   final KP? leftAnkle, rightAnkle;
   final KP? leftWrist, rightWrist;
 
   const PoseKeypoints({
+    required this.leftShoulder,
+    required this.rightShoulder,
     required this.leftHip,
     required this.rightHip,
     required this.leftKnee,
@@ -38,6 +41,8 @@ class PoseKeypoints {
   });
 
   static PoseKeypoints fromMap(Map<dynamic, dynamic> m) => PoseKeypoints(
+        leftShoulder: _kp(m, 'leftShoulder'),
+        rightShoulder: _kp(m, 'rightShoulder'),
         leftHip: _kp(m, 'leftHip'),
         rightHip: _kp(m, 'rightHip'),
         leftKnee: _kp(m, 'leftKnee'),
@@ -47,6 +52,21 @@ class PoseKeypoints {
         leftWrist: _kp(m, 'leftWrist'),
         rightWrist: _kp(m, 'rightWrist'),
       );
+
+  Offset? midShoulder({double minConf = 0.35}) {
+    if (leftShoulder == null || rightShoulder == null) return null;
+    if (min(leftShoulder!.v, rightShoulder!.v) < minConf) return null;
+    return Offset(
+      (leftShoulder!.p.dx + rightShoulder!.p.dx) / 2,
+      (leftShoulder!.p.dy + rightShoulder!.p.dy) / 2,
+    );
+  }
+
+  double? shoulderWidth({double minConf = 0.35}) {
+    if (leftShoulder == null || rightShoulder == null) return null;
+    if (min(leftShoulder!.v, rightShoulder!.v) < minConf) return null;
+    return (leftShoulder!.p - rightShoulder!.p).distance;
+  }
 
   Offset? midHip({double minConf = 0.35}) {
     if (leftHip == null || rightHip == null) return null;

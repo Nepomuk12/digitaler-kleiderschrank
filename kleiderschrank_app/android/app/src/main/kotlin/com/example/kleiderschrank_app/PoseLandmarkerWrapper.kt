@@ -14,6 +14,8 @@ object PoseLandmarkerWrapper {
     // BlazePose Landmark-Indizes (33 Punkte)
     private const val LEFT_WRIST = 15
     private const val RIGHT_WRIST = 16
+    private const val LEFT_SHOULDER = 11
+    private const val RIGHT_SHOULDER = 12
     private const val LEFT_HIP = 23
     private const val RIGHT_HIP = 24
     private const val LEFT_KNEE = 25
@@ -79,6 +81,8 @@ object PoseLandmarkerWrapper {
         val lm = result.landmarks()[0] // erste Person
 
         val out = mutableMapOf<String, Map<String, Double>>()
+        out["leftShoulder"] = pt(lm[LEFT_SHOULDER], bitmap.width, bitmap.height)
+        out["rightShoulder"] = pt(lm[RIGHT_SHOULDER], bitmap.width, bitmap.height)
         out["leftHip"] = pt(lm[LEFT_HIP], bitmap.width, bitmap.height)
         out["rightHip"] = pt(lm[RIGHT_HIP], bitmap.width, bitmap.height)
         out["leftKnee"] = pt(lm[LEFT_KNEE], bitmap.width, bitmap.height)

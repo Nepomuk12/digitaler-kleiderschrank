@@ -2,6 +2,7 @@
 import 'dart:io';
 import 'dart:math';
 import 'dart:ui' as ui;
+import 'package:flutter/material.dart' show Offset;
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -9,6 +10,7 @@ import 'dart:typed_data';
 import 'package:path_provider/path_provider.dart';
 
 import '../config/merge_config.dart';
+import 'pose_service.dart';
 
 enum MergeLayer { top, middle, bottom }
 
@@ -86,9 +88,17 @@ class OutfitMergeService {
 }) async {
   final canvasW = MergeConfig.outWidth.toInt();
 
-  final topImg = await _loadUiImage(top.normalizedImagePath);
-  final bottomImg = await _loadUiImage(bottom.normalizedImagePath);
-  final shoesImg = await _loadUiImage(shoes.normalizedImagePath);
+  final aligned = await _loadAlignedImages(
+    top: top,
+    bottom: bottom,
+    shoes: shoes,
+    topLayer: topLayer,
+    bottomLayer: bottomLayer,
+    shoesLayer: shoesLayer,
+  );
+  final topImg = aligned.top;
+  final bottomImg = aligned.bottom;
+  final shoesImg = aligned.shoes;
 
   final topCrop = await _croppedByAlpha(topImg);
   final bottomCrop = await _croppedByAlpha(bottomImg);
@@ -237,8 +247,17 @@ class OutfitMergeService {
       ui.Rect.fromLTWH(0, 0, canvasW.toDouble(), canvasH.toDouble()),
     );
 
+    final aligned = await _loadAlignedImages(
+      top: top,
+      bottom: bottom,
+      shoes: shoes,
+      topLayer: topLayer,
+      bottomLayer: bottomLayer,
+      shoesLayer: shoesLayer,
+    );
+
     for (final entry in layers) {
-      final img = await _loadUiImage(entry.item.normalizedImagePath);
+      final img = _imageForInput(entry.item, aligned, top, bottom, shoes);
       _drawContain(canvas, img, canvasW.toDouble(), canvasH.toDouble(), ui.Paint());
     }
 
@@ -262,6 +281,214 @@ class OutfitMergeService {
     final codec = await ui.instantiateImageCodec(data);
     final frame = await codec.getNextFrame();
     return frame.image;
+  }
+
+  Future<_AlignedImages> _loadAlignedImages({
+    required MergeInput top,
+    required MergeInput bottom,
+    required MergeInput shoes,
+    required MergeLayer topLayer,
+    required MergeLayer bottomLayer,
+    required MergeLayer shoesLayer,
+  }) async {
+    final topImg = await _loadUiImage(top.normalizedImagePath);
+    final bottomImg = await _loadUiImage(bottom.normalizedImagePath);
+    final shoesImg = await _loadUiImage(shoes.normalizedImagePath);
+
+    if (!MergeConfig.enableGlobalAlignment) {
+      return _AlignedImages(top: topImg, bottom: bottomImg, shoes: shoesImg);
+    }
+
+    final refInput = _chooseReferenceInput(
+      top: top,
+      bottom: bottom,
+      shoes: shoes,
+      topLayer: topLayer,
+      bottomLayer: bottomLayer,
+      shoesLayer: shoesLayer,
+    );
+
+    final refImg = _imageForInput(refInput, _AlignedImages(top: topImg, bottom: bottomImg, shoes: shoesImg), top, bottom, shoes);
+    final poseService = PoseService();
+
+    PoseKeypoints refPose;
+    try {
+      refPose = await poseService.detectPose(refInput.normalizedImagePath);
+    } catch (_) {
+      return _AlignedImages(top: topImg, bottom: bottomImg, shoes: shoesImg);
+    }
+
+    final refGeom = _poseGeomFrom(refPose, MergeConfig.poseMinConf);
+    if (refGeom == null) {
+      return _AlignedImages(top: topImg, bottom: bottomImg, shoes: shoesImg);
+    }
+
+    Future<ui.Image> alignOne(MergeInput input, ui.Image img) async {
+      if (_isSameInput(input, refInput)) return img;
+      PoseKeypoints pose;
+      try {
+        pose = await poseService.detectPose(input.normalizedImagePath);
+      } catch (_) {
+        return img;
+      }
+      final geom = _poseGeomFrom(pose, MergeConfig.poseMinConf);
+      if (geom == null) return img;
+      return _warpToRef(
+        srcImg: img,
+        srcGeom: geom,
+        refGeom: refGeom,
+        outW: refImg.width,
+        outH: refImg.height,
+      );
+    }
+
+    final alignedTop = await alignOne(top, topImg);
+    final alignedBottom = await alignOne(bottom, bottomImg);
+    final alignedShoes = await alignOne(shoes, shoesImg);
+
+    return _AlignedImages(top: alignedTop, bottom: alignedBottom, shoes: alignedShoes);
+  }
+
+  MergeInput _chooseReferenceInput({
+    required MergeInput top,
+    required MergeInput bottom,
+    required MergeInput shoes,
+    required MergeLayer topLayer,
+    required MergeLayer bottomLayer,
+    required MergeLayer shoesLayer,
+  }) {
+    final entries = <({int z, MergeInput input})>[
+      (z: topLayer.z, input: top),
+      (z: bottomLayer.z, input: bottom),
+      (z: shoesLayer.z, input: shoes),
+    ];
+    entries.sort((a, b) {
+      final z = b.z.compareTo(a.z);
+      if (z != 0) return z;
+      return a.input.categoryOrder.compareTo(b.input.categoryOrder);
+    });
+    return entries.first.input;
+  }
+
+  bool _isSameInput(MergeInput a, MergeInput b) {
+    return a.normalizedImagePath == b.normalizedImagePath && a.categoryOrder == b.categoryOrder;
+  }
+
+  ui.Image _imageForInput(
+    MergeInput input,
+    _AlignedImages aligned,
+    MergeInput top,
+    MergeInput bottom,
+    MergeInput shoes,
+  ) {
+    if (_isSameInput(input, top)) return aligned.top;
+    if (_isSameInput(input, bottom)) return aligned.bottom;
+    return aligned.shoes;
+  }
+
+  _PoseGeom? _poseGeomFrom(PoseKeypoints pose, double minConf) {
+    final shoulderMid = pose.midShoulder(minConf: minConf);
+    final hipMid = pose.midHip(minConf: minConf);
+    final shoulderWidth = pose.shoulderWidth(minConf: minConf);
+    if (shoulderMid == null || hipMid == null || shoulderWidth == null || shoulderWidth <= 1.0) {
+      return null;
+    }
+    final torsoVec = hipMid - shoulderMid;
+    final angle = atan2(torsoVec.dy, torsoVec.dx);
+    return _PoseGeom(
+      shoulderMid: shoulderMid,
+      hipMid: hipMid,
+      shoulderWidth: shoulderWidth,
+      angle: angle,
+    );
+  }
+
+  Future<ui.Image> _warpToRef({
+    required ui.Image srcImg,
+    required _PoseGeom srcGeom,
+    required _PoseGeom refGeom,
+    required int outW,
+    required int outH,
+  }) async {
+    final scale = refGeom.shoulderWidth / srcGeom.shoulderWidth;
+    if (!scale.isFinite || scale <= 0) return srcImg;
+
+    final rot = refGeom.angle - srcGeom.angle;
+    final cosR = cos(rot);
+    final sinR = sin(rot);
+
+    final bd = await srcImg.toByteData(format: ui.ImageByteFormat.rawRgba);
+    if (bd == null) return srcImg;
+    final src = bd.buffer.asUint8List();
+    final srcW = srcImg.width;
+    final srcH = srcImg.height;
+
+    final out = Uint8List(outW * outH * 4);
+
+    for (int y = 0; y < outH; y++) {
+      final dy = y - refGeom.hipMid.dy;
+      final outRow = (y * outW) * 4;
+      for (int x = 0; x < outW; x++) {
+        final dx = x - refGeom.hipMid.dx;
+        final sx = (dx * cosR + dy * sinR) / scale + srcGeom.hipMid.dx;
+        final sy = (-dx * sinR + dy * cosR) / scale + srcGeom.hipMid.dy;
+
+        if (sx < 0 || sy < 0 || sx >= srcW - 1 || sy >= srcH - 1) {
+          continue;
+        }
+
+        final x0 = sx.floor();
+        final y0 = sy.floor();
+        final x1 = x0 + 1;
+        final y1 = y0 + 1;
+        final ax = sx - x0;
+        final ay = sy - y0;
+
+        final i00 = (y0 * srcW + x0) * 4;
+        final i10 = (y0 * srcW + x1) * 4;
+        final i01 = (y1 * srcW + x0) * 4;
+        final i11 = (y1 * srcW + x1) * 4;
+
+        final w00 = (1 - ax) * (1 - ay);
+        final w10 = ax * (1 - ay);
+        final w01 = (1 - ax) * ay;
+        final w11 = ax * ay;
+
+        final outIdx = outRow + x * 4;
+        for (int c = 0; c < 4; c++) {
+          final v = src[i00 + c] * w00 +
+              src[i10 + c] * w10 +
+              src[i01 + c] * w01 +
+              src[i11 + c] * w11;
+          out[outIdx + c] = v.round();
+        }
+      }
+    }
+
+    if (MergeConfig.debug) {
+      final tShoulder = _transformPoint(srcGeom.shoulderMid, srcGeom, refGeom, scale, rot);
+      final tHip = _transformPoint(srcGeom.hipMid, srcGeom, refGeom, scale, rot);
+      // ignore: avoid_print
+      print('Aligned landmarks: shoulder=$tShoulder hip=$tHip');
+    }
+
+    return _rgbaToUiImage(out, outW, outH);
+  }
+
+  Offset _transformPoint(
+    Offset p,
+    _PoseGeom srcGeom,
+    _PoseGeom refGeom,
+    double scale,
+    double rot,
+  ) {
+    final cosR = cos(rot);
+    final sinR = sin(rot);
+    final dx = (p.dx - srcGeom.hipMid.dx) * scale;
+    final dy = (p.dy - srcGeom.hipMid.dy) * scale;
+    final rx = dx * cosR - dy * sinR;
+    final ry = dx * sinR + dy * cosR;
+    return Offset(rx + refGeom.hipMid.dx, ry + refGeom.hipMid.dy);
   }
 
   void _drawContain(ui.Canvas canvas, ui.Image img, double canvasW, double canvasH, ui.Paint paint) {
@@ -365,6 +592,32 @@ class _Placed {
   });
 
   ui.Rect dstAt(double y) => ui.Rect.fromLTWH(0, y, dstW, dstH);
+}
+
+class _AlignedImages {
+  final ui.Image top;
+  final ui.Image bottom;
+  final ui.Image shoes;
+
+  const _AlignedImages({
+    required this.top,
+    required this.bottom,
+    required this.shoes,
+  });
+}
+
+class _PoseGeom {
+  final Offset shoulderMid;
+  final Offset hipMid;
+  final double shoulderWidth;
+  final double angle;
+
+  const _PoseGeom({
+    required this.shoulderMid,
+    required this.hipMid,
+    required this.shoulderWidth,
+    required this.angle,
+  });
 }
 Future<Uint8List> _renderPlacedRgba(
   ui.Image img,
@@ -627,6 +880,18 @@ Future<Uint8List> _rgbaToPng(Uint8List rgba, int w, int h) async {
       }
       completer.complete(bd.buffer.asUint8List());
     },
+  );
+  return completer.future;
+}
+
+Future<ui.Image> _rgbaToUiImage(Uint8List rgba, int w, int h) async {
+  final completer = Completer<ui.Image>();
+  ui.decodeImageFromPixels(
+    rgba,
+    w,
+    h,
+    ui.PixelFormat.rgba8888,
+    (ui.Image img) => completer.complete(img),
   );
   return completer.future;
 }

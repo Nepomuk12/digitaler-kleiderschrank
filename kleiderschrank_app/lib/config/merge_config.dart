@@ -49,6 +49,7 @@ class MergeConfig {
 
   /// Pose: Minimum-Confidence für Landmarks (aggressiv = niedriger)
   static const double poseMinConf = 0.30; // vorher typ. 0.35
+  static const bool enableGlobalAlignment = true;
 
   /// Body-Erkennung (HSV), aggressiv großzügig
   /// Hue in Grad, S/V 0..1
