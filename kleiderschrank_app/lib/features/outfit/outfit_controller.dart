@@ -11,7 +11,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../domain/clothing_item_hive.dart';
 import '../../domain/merge_layer_info.dart';
 import '../../domain/tag_labels.dart';
-import '../../services/chatgpt_prompt_builder.dart';
+import '../../services/llm_prompt_builder.dart';
 import '../../services/contact_sheet_generator.dart';
 import '../../services/outfit_merge_service.dart';
 
@@ -31,7 +31,7 @@ class OutfitController {
     BuildContext context,
     List<MergeLayerInfo> selectedLayers,
   ) async {
-    final promptText = ChatGptPromptBuilder().buildPrompt(selectedLayers);
+    final promptText = LlmPromptBuilder().buildPrompt(selectedLayers);
     await Clipboard.setData(ClipboardData(text: promptText));
     if (!context.mounted) return;
 

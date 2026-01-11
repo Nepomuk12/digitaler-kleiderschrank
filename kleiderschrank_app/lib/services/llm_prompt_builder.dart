@@ -1,6 +1,6 @@
 import '../domain/merge_layer_info.dart';
 
-class ChatGptPromptBuilder {
+class LlmPromptBuilder {
   String buildPrompt(List<MergeLayerInfo> layers) {
     final top = _findLayer(layers, LayerSlot.top);
     final bottom = _findLayer(layers, LayerSlot.bottom);
@@ -15,20 +15,25 @@ class ChatGptPromptBuilder {
     return [
       'TASK',
       'Create ONE photorealistic full-body outfit image by COMPOSITING ONLY the garments shown in the provided CONTACT SHEET image. Do NOT invent, redraw, recolor, relight, enhance, or stylize.',
-      '',
+
       'INPUT: CONTACT SHEET (2x2 grid)',
+      '- Each image represents a single clothing item.',
       '- Top-left cell: TOP garment',
       '- Top-right cell: OUTERWEAR garment (optional). If empty/placeholder, ignore.',
       '- Bottom-left cell: BOTTOM garment',
       '- Bottom-right cell: SHOES garment',
-      '',
-      'REQUIREMENTS (VERY IMPORTANT)',
+
+      'OPERATION:',
+      '- Stack the provided clothing images vertically to form one full outfit.',
+      '- Crop the final image to the minimal bounding box containing all non-transparent pixels.',
+
+      'REQUIREMENTS (VERY IMPORTANT):',
       '- Preserve ORIGINAL COLORS, texture, seams, logos, and shading of each garment exactly.',
       '- NO color correction, NO relighting, NO contrast boost, NO enhancement, NO style transfer.',
       '- Do NOT add extra body parts (arms/torso/underwear). Do not hallucinate new clothing.',
       '- Output framing: include FULL shoes and add visible floor below shoes (at least 8% image height). Never crop bottom at feet.',
       '- Crop ONLY at the top: start at NOSE (nose visible, eyes/forehead/hair NOT visible). Neutral background.',
-      '',
+
       'LAYER / OCCLUSION RULES',
       '- Use zIndex values only as occlusion priority (higher z covers lower z).',
       '- Explicit relations:',
@@ -37,11 +42,19 @@ class ChatGptPromptBuilder {
       '  - outerwear_vs_top: over',
       '  - outerwear_vs_bottom: over',
       '',
-      'SLOTS',
-      _formatSlotLine('TOP', top),
-      _formatSlotLine('BOTTOM', bottom),
-      _formatSlotLine('SHOES', shoes),
-      _formatSlotLine('OUTERWEAR', outerwear),
+      //'SLOTS',
+      //_formatSlotLine('TOP', top),
+      //_formatSlotLine('BOTTOM', bottom),
+      //_formatSlotLine('SHOES', shoes),
+      //_formatSlotLine('OUTERWEAR', outerwear),
+
+      'FORBIDDEN (HARD CONSTRAINTS):',
+      '- Do NOT generate a body, skin, face, limbs, or anatomy.',
+      '- Do NOT generate lighting, shadows, gradients, or background.',
+      '- Do NOT recolor, relight, sharpen, blur, or stylize.',
+      '- Do NOT add or hallucinate any pixels not present in the input images.',
+      '- Do NOT ask if image should be generated or recommend wearing, just create image.',
+
     ].join('\n');
   }
 
