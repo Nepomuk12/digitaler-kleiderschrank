@@ -545,27 +545,38 @@ class _MergeBlock extends StatelessWidget {
           ),
 
           const SizedBox(height: 7),
-          SizedBox(
-            height: 40,
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: onMerge,
-                    icon: const Icon(Icons.auto_fix_high),
-                    label: const Text('Merge'),
-                  ),
+          Column(
+            children: [
+              SizedBox(
+                height: 40,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: onMerge,
+                        icon: const Icon(Icons.auto_fix_high),
+                        label: const Text('Merge'),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: canShareToGemini ? onShareToGemini : null,
-                    icon: const Icon(Icons.share),
-                    label: const Text('Share to ChatGPT (1 image)'),
-                  ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 40,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: canShareToGemini ? onShareToGemini : null,
+                        icon: const Icon(Icons.share),
+                        label: const Text('KI Merge'),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),

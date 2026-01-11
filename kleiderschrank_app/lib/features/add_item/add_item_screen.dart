@@ -81,6 +81,8 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
           );
         case ClothingCategory.outerwear:
           return const SizedBox.shrink();
+        case ClothingCategory.outfit:
+          return const SizedBox.shrink();
       }
     }
 

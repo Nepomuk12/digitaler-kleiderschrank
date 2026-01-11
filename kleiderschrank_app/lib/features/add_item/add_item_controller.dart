@@ -115,9 +115,9 @@ class AddItemController extends StateNotifier<AddItemState> {
       createdAt: DateTime.now().millisecondsSinceEpoch,
       tags: const [],
       color: color,
-      topType: topType,
-      bottomType: bottomType,
-      shoeType: shoeType,
+      topType: category == ClothingCategory.top ? topType : null,
+      bottomType: category == ClothingCategory.bottom ? bottomType : null,
+      shoeType: category == ClothingCategory.shoes ? shoeType : null,
       brandNotes: brandNotes,
     );
 

@@ -16,6 +16,9 @@ enum ClothingCategory {
 
   @HiveField(3)
   shoes,
+
+  @HiveField(4)
+  outfit,
 }
 
 /// Tag 1: Farbe (inkl. Muster/Mehrfarbig)

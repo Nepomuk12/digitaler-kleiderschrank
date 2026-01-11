@@ -88,6 +88,8 @@ class ClothingCategoryAdapter extends TypeAdapter<ClothingCategory> {
         return ClothingCategory.outerwear;
       case 3:
         return ClothingCategory.shoes;
+      case 4:
+        return ClothingCategory.outfit;
       default:
         return ClothingCategory.top;
     }
@@ -107,6 +109,9 @@ class ClothingCategoryAdapter extends TypeAdapter<ClothingCategory> {
         break;
       case ClothingCategory.shoes:
         writer.writeByte(3);
+        break;
+      case ClothingCategory.outfit:
+        writer.writeByte(4);
         break;
     }
   }

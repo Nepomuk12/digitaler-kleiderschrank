@@ -10,6 +10,8 @@ String categoryLabel(ClothingCategory c) {
       return 'Jacken / Mäntel';
     case ClothingCategory.shoes:
       return 'Schuhe / Stiefel';
+    case ClothingCategory.outfit:
+      return 'Outfit (komplett)';
   }
 }
 

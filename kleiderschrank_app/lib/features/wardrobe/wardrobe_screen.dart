@@ -37,6 +37,8 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
         case ClothingCategory.outerwear:
           // aktuell kein outerwearType -> daher "type:" ignorieren (kein Match)
           return false;
+        case ClothingCategory.outfit:
+          return false;
       }
     }
 
@@ -80,6 +82,8 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
         case ClothingCategory.outerwear:
           // noch kein outerwearType
           break;
+        case ClothingCategory.outfit:
+          break;
       }
     }
 
@@ -93,6 +97,8 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
         case ClothingCategory.shoes:
           return shoeTypeLabel(ShoeType.values.firstWhere((e) => e.name == name));
         case ClothingCategory.outerwear:
+          return name;
+        case ClothingCategory.outfit:
           return name;
       }
     }
@@ -365,6 +371,8 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
         );
       case ClothingCategory.outerwear:
         return const SizedBox.shrink(); // später outerwearType
+      case ClothingCategory.outfit:
+        return const SizedBox.shrink();
     }
   }
 
