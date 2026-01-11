@@ -17,6 +17,7 @@ Future<void> main() async {
   Hive.registerAdapter(TopTypeAdapter()); // Adapter für Oberteil-Typen
   Hive.registerAdapter(BottomTypeAdapter()); // Adapter für Unterteil-Typen
   Hive.registerAdapter(ShoeTypeAdapter()); // Adapter für Schuh-Typen
+  Hive.registerAdapter(OutfitOccasionAdapter()); // Adapter f�r Outfit-Anl�sse
 
   await Hive.openBox<ClothingItem>('clothing_items'); // öffnet die Box mit gespeicherten Kleidungsstücken
 

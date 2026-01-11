@@ -38,7 +38,7 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
           // aktuell kein outerwearType -> daher "type:" ignorieren (kein Match)
           return false;
         case ClothingCategory.outfit:
-          return false;
+          return it.occasions.any((o) => o.name == typeName);
       }
     }
 
@@ -83,6 +83,11 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
           // noch kein outerwearType
           break;
         case ClothingCategory.outfit:
+          if (it.occasions.isNotEmpty) {
+            for (final o in it.occasions) {
+              typeValues.add(o.name);
+            }
+          }
           break;
       }
     }
@@ -99,7 +104,7 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
         case ClothingCategory.outerwear:
           return name;
         case ClothingCategory.outfit:
-          return name;
+          return outfitOccasionLabel(OutfitOccasion.values.firstWhere((e) => e.name == name));
       }
     }
 
@@ -114,7 +119,7 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
 
     items.add(const DropdownMenuItem<String>(
       value: null,
-      child: Text('Untergruppe/Farbe: alle'),
+      child: Text('Untergruppe: alle'),
     ));
 
     // Typen nur anbieten, wenn genau eine Kategorie gewählt ist und Typen existieren
@@ -320,6 +325,8 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
   TopType? topType;
   BottomType? bottomType;
   ShoeType? shoeType;
+  List<OutfitOccasion> selectedOccasions = [];
+  final _brandCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -329,6 +336,14 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
     topType = widget.item.topType;
     bottomType = widget.item.bottomType;
     shoeType = widget.item.shoeType;
+    selectedOccasions = List<OutfitOccasion>.from(widget.item.occasions);
+    _brandCtrl.text = widget.item.brandNotes ?? '';
+  }
+
+  @override
+  void dispose() {
+    _brandCtrl.dispose();
+    super.dispose();
   }
 
   Widget _typeDropdown() {
@@ -382,6 +397,64 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
     shoeType = null;
   }
 
+  Future<void> _editOccasions() async {
+    final temp = List<OutfitOccasion>.from(selectedOccasions);
+    final result = await showDialog<List<OutfitOccasion>>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text('Anlässe auswählen'),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 360,
+                child: Scrollbar(
+                  child: ListView(
+                    children: OutfitOccasion.values.map((o) {
+                      final checked = temp.contains(o);
+                      return CheckboxListTile(
+                        value: checked,
+                        title: Text(outfitOccasionLabel(o)),
+                        onChanged: (v) {
+                          setStateDialog(() {
+                            if (v == true) {
+                              temp.add(o);
+                            } else {
+                              temp.remove(o);
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Abbrechen'),
+                ),
+                TextButton(
+                  onPressed: () => setStateDialog(() => temp.clear()),
+                  child: const Text('Alles löschen'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, temp),
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null) {
+      setState(() => selectedOccasions = result);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final repo = ref.read(clothingRepoProvider);
@@ -419,6 +492,11 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
               onChanged: (v) => setState(() {
                 category = v ?? category;
                 _clearTypesForCategory();
+                if (category == ClothingCategory.outfit) {
+                  color = null;
+                } else {
+                  selectedOccasions = [];
+                }
               }),
               decoration: const InputDecoration(
                 labelText: 'Kategorie',
@@ -427,22 +505,46 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
             ),
             const SizedBox(height: 12),
 
-            // Farbe
-            DropdownButtonFormField<ColorTag>(
-              value: color,
-              items: ColorTag.values
-                  .map((c) => DropdownMenuItem(value: c, child: Text(colorLabel(c))))
-                  .toList(),
-              onChanged: (v) => setState(() => color = v),
-              decoration: const InputDecoration(
-                labelText: 'Farbe',
-                border: OutlineInputBorder(),
-              ),
+            const Text(
+              'Farbe/Anlass',
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
+            const SizedBox(height: 12),
+            if (category != ClothingCategory.outfit)
+              DropdownButtonFormField<ColorTag>(
+                value: color,
+                items: ColorTag.values
+                    .map((c) => DropdownMenuItem(value: c, child: Text(colorLabel(c))))
+                    .toList(),
+                onChanged: (v) => setState(() => color = v),
+                decoration: const InputDecoration(
+                  labelText: 'Farbe',
+                  border: OutlineInputBorder(),
+                ),
+              )
+            else ...[
+              OutlinedButton(
+                onPressed: _editOccasions,
+                child: const Text('Anlässe auswählen'),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                selectedOccasions.isEmpty
+                    ? 'Keine Anlässe ausgewählt'
+                    : selectedOccasions.map(outfitOccasionLabel).join(', '),
+                style: const TextStyle(color: Colors.black54),
+              ),
+            ],
             const SizedBox(height: 12),
 
             // Typ
             _typeDropdown(),
+            const SizedBox(height: 12),
+
+            TextField(
+              controller: _brandCtrl,
+              decoration: const InputDecoration(labelText: 'Marke / Notizen'),
+            ),
             const SizedBox(height: 12),
 
             Row(
@@ -481,10 +583,11 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
                   child: FilledButton.icon(
                     icon: const Icon(Icons.save),
                     label: const Text('Speichern'),
-                    onPressed: () async {
-                      final updated = ClothingItem(
-                        id: widget.item.id,
-                        category: category,
+                  onPressed: () async {
+                    final isOutfit = category == ClothingCategory.outfit;
+                    final updated = ClothingItem(
+                      id: widget.item.id,
+                      category: category,
 
                         // Übergang
                         imagePath: widget.item.normalizedImagePath,
@@ -493,16 +596,19 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
                         rawImagePath: widget.item.rawImagePath,
                         normalizedImagePath: widget.item.normalizedImagePath,
 
-                        createdAt: widget.item.createdAt,
-                        tags: widget.item.tags,
-                        color: color,
-                        topType: topType,
-                        bottomType: bottomType,
-                        shoeType: shoeType,
+                      createdAt: widget.item.createdAt,
+                      tags: widget.item.tags,
+                      color: isOutfit ? null : color,
+                      topType: topType,
+                      bottomType: bottomType,
+                      shoeType: shoeType,
+                      occasions: isOutfit ? selectedOccasions : const [],
+                      brandNotes: _brandCtrl.text.trim().isEmpty
+                          ? null
+                          : _brandCtrl.text.trim(),
 
-                        // Brand/Notes falls vorhanden im Model:
-                        // brandNotes: widget.item.brandNotes,
-                      );
+                      // Brand/Notes falls vorhanden im Model:
+                    );
 
                       await repo.upsertItem(updated);
                       if (context.mounted) Navigator.pop(context);

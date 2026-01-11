@@ -29,13 +29,15 @@ class ClothingItemAdapter extends TypeAdapter<ClothingItem> {
       rawImagePath: fields[9] as String?,
       normalizedImagePath: fields[10] as String,
       brandNotes: fields[11] as String?,
+      occasions:
+          fields[12] == null ? [] : (fields[12] as List).cast<OutfitOccasion>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, ClothingItem obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -59,7 +61,9 @@ class ClothingItemAdapter extends TypeAdapter<ClothingItem> {
       ..writeByte(10)
       ..write(obj.normalizedImagePath)
       ..writeByte(11)
-      ..write(obj.brandNotes);
+      ..write(obj.brandNotes)
+      ..writeByte(12)
+      ..write(obj.occasions);
   }
 
   @override
@@ -649,6 +653,135 @@ class ShoeTypeAdapter extends TypeAdapter<ShoeType> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is ShoeTypeAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class OutfitOccasionAdapter extends TypeAdapter<OutfitOccasion> {
+  @override
+  final int typeId = 7;
+
+  @override
+  OutfitOccasion read(BinaryReader reader) {
+    switch (reader.readByte()) {
+      case 0:
+        return OutfitOccasion.casual;
+      case 1:
+        return OutfitOccasion.homewear;
+      case 2:
+        return OutfitOccasion.streetwear;
+      case 3:
+        return OutfitOccasion.travel;
+      case 4:
+        return OutfitOccasion.summer;
+      case 5:
+        return OutfitOccasion.winter;
+      case 6:
+        return OutfitOccasion.officeBusinessCasual;
+      case 7:
+        return OutfitOccasion.businessFormal;
+      case 8:
+        return OutfitOccasion.smartCasual;
+      case 9:
+        return OutfitOccasion.appointment;
+      case 10:
+        return OutfitOccasion.sportTraining;
+      case 11:
+        return OutfitOccasion.outdoorHiking;
+      case 12:
+        return OutfitOccasion.running;
+      case 13:
+        return OutfitOccasion.yoga;
+      case 14:
+        return OutfitOccasion.dinner;
+      case 15:
+        return OutfitOccasion.clubParty;
+      case 16:
+        return OutfitOccasion.eventFormal;
+      case 17:
+        return OutfitOccasion.dateNight;
+      case 18:
+        return OutfitOccasion.beachHoliday;
+      case 19:
+        return OutfitOccasion.rainWeather;
+      default:
+        return OutfitOccasion.casual;
+    }
+  }
+
+  @override
+  void write(BinaryWriter writer, OutfitOccasion obj) {
+    switch (obj) {
+      case OutfitOccasion.casual:
+        writer.writeByte(0);
+        break;
+      case OutfitOccasion.homewear:
+        writer.writeByte(1);
+        break;
+      case OutfitOccasion.streetwear:
+        writer.writeByte(2);
+        break;
+      case OutfitOccasion.travel:
+        writer.writeByte(3);
+        break;
+      case OutfitOccasion.summer:
+        writer.writeByte(4);
+        break;
+      case OutfitOccasion.winter:
+        writer.writeByte(5);
+        break;
+      case OutfitOccasion.officeBusinessCasual:
+        writer.writeByte(6);
+        break;
+      case OutfitOccasion.businessFormal:
+        writer.writeByte(7);
+        break;
+      case OutfitOccasion.smartCasual:
+        writer.writeByte(8);
+        break;
+      case OutfitOccasion.appointment:
+        writer.writeByte(9);
+        break;
+      case OutfitOccasion.sportTraining:
+        writer.writeByte(10);
+        break;
+      case OutfitOccasion.outdoorHiking:
+        writer.writeByte(11);
+        break;
+      case OutfitOccasion.running:
+        writer.writeByte(12);
+        break;
+      case OutfitOccasion.yoga:
+        writer.writeByte(13);
+        break;
+      case OutfitOccasion.dinner:
+        writer.writeByte(14);
+        break;
+      case OutfitOccasion.clubParty:
+        writer.writeByte(15);
+        break;
+      case OutfitOccasion.eventFormal:
+        writer.writeByte(16);
+        break;
+      case OutfitOccasion.dateNight:
+        writer.writeByte(17);
+        break;
+      case OutfitOccasion.beachHoliday:
+        writer.writeByte(18);
+        break;
+      case OutfitOccasion.rainWeather:
+        writer.writeByte(19);
+        break;
+    }
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is OutfitOccasionAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

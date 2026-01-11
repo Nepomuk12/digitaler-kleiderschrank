@@ -21,6 +21,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
   TopType? topType;
   BottomType? bottomType;
   ShoeType? shoeType;
+  List<OutfitOccasion> selectedOccasions = [];
 
   final _brandCtrl = TextEditingController();
 
@@ -106,7 +107,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
 
     Widget footer() {
       return const Text(
-        'Version 1.2.1f\n'
+        'Version 1.2.2a\n'
         'Release Date: $releaseDate\n'
         'Copyright: C.Bohne',
         textAlign: TextAlign.center,
@@ -116,6 +117,64 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
           height: 1.2,
         ),
       );
+    }
+
+    Future<void> editOccasions() async {
+      final temp = List<OutfitOccasion>.from(selectedOccasions);
+      final result = await showDialog<List<OutfitOccasion>>(
+        context: context,
+        builder: (context) {
+          return StatefulBuilder(
+            builder: (context, setStateDialog) {
+              return AlertDialog(
+                title: const Text('Anlässe auswählen'),
+                content: SizedBox(
+                  width: double.maxFinite,
+                  height: 360,
+                  child: Scrollbar(
+                    child: ListView(
+                      children: OutfitOccasion.values.map((o) {
+                        final checked = temp.contains(o);
+                        return CheckboxListTile(
+                          value: checked,
+                          title: Text(outfitOccasionLabel(o)),
+                          onChanged: (v) {
+                            setStateDialog(() {
+                              if (v == true) {
+                                temp.add(o);
+                              } else {
+                                temp.remove(o);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Abbrechen'),
+                  ),
+                  TextButton(
+                    onPressed: () => setStateDialog(() => temp.clear()),
+                    child: const Text('Alles löschen'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(context, temp),
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+
+      if (result != null) {
+        setState(() => selectedOccasions = result);
+      }
     }
 
     return Scaffold(
@@ -187,22 +246,51 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
                                     child: Text(categoryLabel(c)),
                                   ))
                               .toList(),
-                          onChanged: (v) => setState(() => category = v!),
+                          onChanged: (v) => setState(() {
+                            category = v!;
+                            if (category == ClothingCategory.outfit) {
+                              color = null;
+                              topType = null;
+                              bottomType = null;
+                              shoeType = null;
+                            } else {
+                              selectedOccasions = [];
+                            }
+                          }),
                           decoration: const InputDecoration(labelText: 'Kategorie'),
                         ),
                         const SizedBox(height: 12),
 
-                        DropdownButtonFormField<ColorTag>(
-                          value: color,
-                          items: ColorTag.values
-                              .map((c) => DropdownMenuItem(
-                                    value: c,
-                                    child: Text(colorLabel(c)),
-                                  ))
-                              .toList(),
-                          onChanged: (v) => setState(() => color = v),
-                          decoration: const InputDecoration(labelText: 'Farbe'),
+                        const Text(
+                          'Farbe/Anlass',
+                          style: TextStyle(fontWeight: FontWeight.w600),
                         ),
+                        const SizedBox(height: 12),
+                        if (category != ClothingCategory.outfit)
+                          DropdownButtonFormField<ColorTag>(
+                            value: color,
+                            items: ColorTag.values
+                                .map((c) => DropdownMenuItem(
+                                      value: c,
+                                      child: Text(colorLabel(c)),
+                                    ))
+                                .toList(),
+                            onChanged: (v) => setState(() => color = v),
+                            decoration: const InputDecoration(labelText: 'Farbe'),
+                          )
+                        else ...[
+                          OutlinedButton(
+                            onPressed: editOccasions,
+                            child: const Text('Anlässe auswählen'),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            selectedOccasions.isEmpty
+                                ? 'Keine Anlässe ausgewählt'
+                                : selectedOccasions.map(outfitOccasionLabel).join(', '),
+                            style: const TextStyle(color: Colors.black54),
+                          ),
+                        ],
                         const SizedBox(height: 12),
 
                         typeDropdown(),
@@ -225,6 +313,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
                               topType: topType,
                               bottomType: bottomType,
                               shoeType: shoeType,
+                              occasions: selectedOccasions,
                               brandNotes: _brandCtrl.text.trim().isEmpty
                                   ? null
                                   : _brandCtrl.text.trim(),

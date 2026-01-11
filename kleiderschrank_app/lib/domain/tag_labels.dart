@@ -198,3 +198,48 @@ String shoeTypeLabel(ShoeType s) {
       return 'Sonstiges';
   }
 }
+
+String outfitOccasionLabel(OutfitOccasion o) {
+  switch (o) {
+    case OutfitOccasion.casual:
+      return 'Freizeit / Casual';
+    case OutfitOccasion.homewear:
+      return 'Homewear / Loungewear';
+    case OutfitOccasion.streetwear:
+      return 'Streetwear';
+    case OutfitOccasion.travel:
+      return 'Reise / Travel';
+    case OutfitOccasion.summer:
+      return 'Sommer Outfit';
+    case OutfitOccasion.winter:
+      return 'Winter Outfit';
+    case OutfitOccasion.officeBusinessCasual:
+      return 'Büro / Business Casual';
+    case OutfitOccasion.businessFormal:
+      return 'Business / Formal';
+    case OutfitOccasion.smartCasual:
+      return 'Smart Casual';
+    case OutfitOccasion.appointment:
+      return 'Termin / Präsentation';
+    case OutfitOccasion.sportTraining:
+      return 'Sport / Training';
+    case OutfitOccasion.outdoorHiking:
+      return 'Outdoor / Wandern';
+    case OutfitOccasion.running:
+      return 'Running / Cardio';
+    case OutfitOccasion.yoga:
+      return 'Yoga / Relax Sport';
+    case OutfitOccasion.dinner:
+      return 'Abend / Dinner';
+    case OutfitOccasion.clubParty:
+      return 'Club / Party';
+    case OutfitOccasion.eventFormal:
+      return 'Event / Feierlich';
+    case OutfitOccasion.dateNight:
+      return 'Date / Night Out';
+    case OutfitOccasion.beachHoliday:
+      return 'Urlaub / Strand';
+    case OutfitOccasion.rainWeather:
+      return 'Schlechtwetter / Regen';
+  }
+}

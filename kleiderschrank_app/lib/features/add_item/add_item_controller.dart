@@ -100,11 +100,13 @@ class AddItemController extends StateNotifier<AddItemState> {
     TopType? topType,
     BottomType? bottomType,
     ShoeType? shoeType,
+    List<OutfitOccasion> occasions = const [],
     String? brandNotes,
   }) async {
     if (!state.hasImage) return;
 
     final id = _uuid.v4();
+    final isOutfit = category == ClothingCategory.outfit;
 
     final item = ClothingItem(
       id: id,
@@ -114,11 +116,12 @@ class AddItemController extends StateNotifier<AddItemState> {
       normalizedImagePath: state.normalizedPath!,
       createdAt: DateTime.now().millisecondsSinceEpoch,
       tags: const [],
-      color: color,
+      color: isOutfit ? null : color,
       topType: category == ClothingCategory.top ? topType : null,
       bottomType: category == ClothingCategory.bottom ? bottomType : null,
       shoeType: category == ClothingCategory.shoes ? shoeType : null,
       brandNotes: brandNotes,
+      occasions: isOutfit ? occasions : const [],
     );
 
     await _repo.insertItem(item);

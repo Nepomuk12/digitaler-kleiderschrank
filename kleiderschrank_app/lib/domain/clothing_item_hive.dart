@@ -206,6 +206,51 @@ enum ShoeType {
   other, // Sonstiges
 }
 
+/// Outfit occasions (for future multi-select on Outfit items)
+@HiveType(typeId: 7)
+enum OutfitOccasion {
+  @HiveField(0)
+  casual,
+  @HiveField(1)
+  homewear,
+  @HiveField(2)
+  streetwear,
+  @HiveField(3)
+  travel,
+  @HiveField(4)
+  summer,
+  @HiveField(5)
+  winter,
+  @HiveField(6)
+  officeBusinessCasual,
+  @HiveField(7)
+  businessFormal,
+  @HiveField(8)
+  smartCasual,
+  @HiveField(9)
+  appointment,
+  @HiveField(10)
+  sportTraining,
+  @HiveField(11)
+  outdoorHiking,
+  @HiveField(12)
+  running,
+  @HiveField(13)
+  yoga,
+  @HiveField(14)
+  dinner,
+  @HiveField(15)
+  clubParty,
+  @HiveField(16)
+  eventFormal,
+  @HiveField(17)
+  dateNight,
+  @HiveField(18)
+  beachHoliday,
+  @HiveField(19)
+  rainWeather,
+}
+
 /// Clothing Item (Hive persisted)
 @HiveType(typeId: 2)
 class ClothingItem extends HiveObject {
@@ -249,6 +294,9 @@ class ClothingItem extends HiveObject {
   @HiveField(11)
   final String? brandNotes;
 
+  @HiveField(12, defaultValue: <OutfitOccasion>[])
+  final List<OutfitOccasion> occasions;
+
   ClothingItem({
     required this.id,
     required this.category,
@@ -262,5 +310,6 @@ class ClothingItem extends HiveObject {
     this.rawImagePath,
     required this.normalizedImagePath,
     this.brandNotes,
+    this.occasions = const [],
   });
 }
