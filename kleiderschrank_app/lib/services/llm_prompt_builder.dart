@@ -14,7 +14,7 @@ class LlmPromptBuilder {
 
     return [
       'TASK',
-      'Create ONE photorealistic full-body outfit image by COMPOSITING ONLY the garments shown in the provided CONTACT SHEET image. Do NOT invent, redraw, recolor, relight, enhance, or stylize.',
+      'Create ONE photorealistic full-body outfit image by using  the garments shown in the provided CONTACT SHEET image. Do NOT recolor, relight, enhance, or stylize.',
 
       'INPUT: CONTACT SHEET (2x2 grid)',
       '- Each image represents a single clothing item.',
@@ -48,12 +48,12 @@ class LlmPromptBuilder {
       //_formatSlotLine('SHOES', shoes),
       //_formatSlotLine('OUTERWEAR', outerwear),
 
-      'FORBIDDEN (HARD CONSTRAINTS):',
-      '- Do NOT generate a body, skin, face, limbs, or anatomy.',
-      '- Do NOT generate lighting, shadows, gradients, or background.',
-      '- Do NOT recolor, relight, sharpen, blur, or stylize.',
-      '- Do NOT add or hallucinate any pixels not present in the input images.',
-      '- Do NOT ask if image should be generated or recommend wearing, just create image.',
+      //'hINT:',
+      //'- Do NOT generate a body, skin, face, limbs, or anatomy.',
+      //'- Do NOT generate lighting, shadows, gradients, or background.',
+      //'- Do NOT recolor, relight, sharpen, blur, or stylize.',
+      //'- Do NOT add or hallucinate any pixels not present in the input images.',
+      //'- Do NOT ask if image should be generated or recommend wearing, just create image.',
 
     ].join('\n');
   }

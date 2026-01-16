@@ -210,10 +210,10 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
                       },
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: Image.file(
-                          File(it.normalizedImagePath),
-                          fit: BoxFit.cover,
-                        ),
+                      child: Image.file(
+                        File(it.normalizedImagePath),
+                        fit: BoxFit.contain,
+                      ),
                       ),
                     );
                   },
@@ -477,7 +477,7 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
                 aspectRatio: 3 / 4,
                 child: Image.file(
                   File(widget.item.normalizedImagePath),
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                 ),
               ),
             ),

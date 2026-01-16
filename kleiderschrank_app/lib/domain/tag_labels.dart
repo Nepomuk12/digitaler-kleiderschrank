@@ -95,7 +95,7 @@ String topTypeLabel(TopType t) {
     case TopType.tank:
       return 'Tanktop';
     case TopType.clubwear:
-      return 'Clubwear';
+      return 'Date / FürIhn';
     case TopType.homewear:
       return 'Home & Loungewear';  
     case TopType.other:
@@ -146,7 +146,7 @@ String bottomTypeLabel(BottomType b) {
     case BottomType.CroppedTrouser:
       return '7/8-Hose';
     case BottomType.clubwear:
-      return 'Clubwear';    
+      return 'Date / FürIhn';    
     case BottomType.homewear:
       return 'Home & Loungewear';    
     case BottomType.other:
@@ -232,11 +232,11 @@ String outfitOccasionLabel(OutfitOccasion o) {
     case OutfitOccasion.dinner:
       return 'Abend / Dinner';
     case OutfitOccasion.clubParty:
-      return 'Club / Party';
+      return 'Tanzen / Club';
     case OutfitOccasion.eventFormal:
       return 'Event / Feierlich';
     case OutfitOccasion.dateNight:
-      return 'Date / Night Out';
+      return 'Date / FürIhn';
     case OutfitOccasion.beachHoliday:
       return 'Urlaub / Strand';
     case OutfitOccasion.rainWeather:
