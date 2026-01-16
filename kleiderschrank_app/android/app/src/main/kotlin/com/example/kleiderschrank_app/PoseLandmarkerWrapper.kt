@@ -28,8 +28,19 @@ object PoseLandmarkerWrapper {
     private fun ensureInit(context: Context) {
         if (landmarker != null) return
 
+        val modelPath = "models/pose_landmarker_lite.task"
+        try {
+            context.assets.open(modelPath).close()
+        } catch (e: Exception) {
+            throw IllegalStateException(
+                "Missing MediaPipe model asset: $modelPath. " +
+                    "Put the real binary pose_landmarker_lite.task into " +
+                    "android/app/src/main/assets/models/",
+                e,
+            )
+        }
         val baseOptions = BaseOptions.builder()
-            .setModelAssetPath("pose_landmarker_lite.task")
+            .setModelAssetPath(modelPath)
             .build()
 
         val options = PoseLandmarker.PoseLandmarkerOptions.builder()

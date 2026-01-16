@@ -570,7 +570,7 @@ class _MergeBlock extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: canShareToGemini ? onShareToGemini : null,
                         icon: const Icon(Icons.share),
-                        label: const Text('KI Merge'),
+                        label: const Text('Gemini'),
                       ),
                     ),
                   ],
