@@ -38,8 +38,8 @@ android {
 
     buildTypes {
     release {
-        isMinifyEnabled = true
-        isShrinkResources = true
+        isMinifyEnabled = false
+        isShrinkResources = false
         proguardFiles(
             getDefaultProguardFile("proguard-android-optimize.txt"),
             "proguard-rules.pro"
@@ -50,7 +50,7 @@ android {
 }
 
 dependencies {
-    implementation("com.google.mediapipe:tasks-vision:latest.release")
+    implementation("com.google.mediapipe:tasks-vision:0.10.14")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
 }

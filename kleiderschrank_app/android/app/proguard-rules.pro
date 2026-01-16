@@ -5,3 +5,8 @@
 -dontwarn javax.lang.model.type.TypeMirror
 -dontwarn javax.lang.model.type.TypeVisitor
 -dontwarn javax.lang.model.util.SimpleTypeVisitor8
+
+# MediaPipe / TFLite: keep classes referenced from native code.
+-keep class com.google.mediapipe.** { *; }
+-keep class com.google.ai.** { *; }
+-keep class org.tensorflow.** { *; }
