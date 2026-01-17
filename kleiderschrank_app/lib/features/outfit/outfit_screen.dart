@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../domain/clothing_item_hive.dart';
 import '../../domain/merge_layer_info.dart';
@@ -43,6 +44,12 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
   MergeLayer shoesLayer = MergeLayer.bottom; // Bottom Layer = Stiefelschaft verdeckt
 
   final OutfitMergeService _mergeService = const OutfitMergeService();
+  final Box _stateBox = Hive.box('outfit_state');
+  bool _stateLoaded = false;
+  bool _selectionApplied = false;
+  String? _savedTopId;
+  String? _savedBottomId;
+  String? _savedShoesId;
 
   int _wrap(int i, int len) {
     // Hält Indizes zyklisch im Bereich der Liste.
@@ -119,6 +126,90 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _loadPersistedState();
+  }
+
+  void _loadPersistedState() {
+    topType = _readEnum<TopType>(_stateBox.get('topType'));
+    topColor = _readEnum<ColorTag>(_stateBox.get('topColor'));
+    bottomType = _readEnum<BottomType>(_stateBox.get('bottomType'));
+    bottomColor = _readEnum<ColorTag>(_stateBox.get('bottomColor'));
+    shoeType = _readEnum<ShoeType>(_stateBox.get('shoeType'));
+    shoesColor = _readEnum<ColorTag>(_stateBox.get('shoesColor'));
+    showOuterwear = _stateBox.get('showOuterwear') == true;
+    _savedTopId = _stateBox.get('topId');
+    _savedBottomId = _stateBox.get('bottomId');
+    _savedShoesId = _stateBox.get('shoesId');
+    _stateLoaded = true;
+  }
+
+  T? _readEnum<T>(dynamic value) {
+    if (value == null) return null;
+    if (T == TopType) {
+      for (final v in TopType.values) {
+        if (v.name == value) return v as T;
+      }
+      return null;
+    }
+    if (T == BottomType) {
+      for (final v in BottomType.values) {
+        if (v.name == value) return v as T;
+      }
+      return null;
+    }
+    if (T == ShoeType) {
+      for (final v in ShoeType.values) {
+        if (v.name == value) return v as T;
+      }
+      return null;
+    }
+    if (T == ColorTag) {
+      for (final v in ColorTag.values) {
+        if (v.name == value) return v as T;
+      }
+      return null;
+    }
+    return null;
+  }
+
+  void _applySavedSelection(
+    List<ClothingItem> tops,
+    List<ClothingItem> bottoms,
+    List<ClothingItem> shoes,
+  ) {
+    if (!_stateLoaded || _selectionApplied) return;
+    if (_savedTopId != null) {
+      final idx = tops.indexWhere((e) => e.id == _savedTopId);
+      if (idx >= 0) topIndex = idx;
+    }
+    if (_savedBottomId != null) {
+      final idx = bottoms.indexWhere((e) => e.id == _savedBottomId);
+      if (idx >= 0) bottomIndex = idx;
+    }
+    if (_savedShoesId != null) {
+      final idx = shoes.indexWhere((e) => e.id == _savedShoesId);
+      if (idx >= 0) shoesIndex = idx;
+    }
+    _selectionApplied = true;
+  }
+
+  void _persistState(ClothingItem? top, ClothingItem? bottom, ClothingItem? shoes) {
+    if (!_stateLoaded) return;
+    _stateBox.put('topType', topType?.name);
+    _stateBox.put('topColor', topColor?.name);
+    _stateBox.put('bottomType', bottomType?.name);
+    _stateBox.put('bottomColor', bottomColor?.name);
+    _stateBox.put('shoeType', shoeType?.name);
+    _stateBox.put('shoesColor', shoesColor?.name);
+    _stateBox.put('showOuterwear', showOuterwear);
+    _stateBox.put('topId', top?.id);
+    _stateBox.put('bottomId', bottom?.id);
+    _stateBox.put('shoesId', shoes?.id);
+  }
+
+  @override
   Widget build(BuildContext context) {
     // UI: linke Filterspalte, rechte Outfit-Vorschau mit Swipe-Auswahl.
     final repo = ref.read(clothingRepoProvider);
@@ -177,9 +268,13 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
     bottomIndex = _wrap(bottomIndex, bottoms.length);
     shoesIndex = _wrap(shoesIndex, shoes.length);
 
+    _applySavedSelection(tops, bottoms, shoes);
     final selectedTop = _current(tops, topIndex);
     final selectedBottom = _current(bottoms, bottomIndex);
     final selectedShoes = _current(shoes, shoesIndex);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _persistState(selectedTop, selectedBottom, selectedShoes);
+    });
     const topBottomRelation = WearRelation.over;
     const bottomShoesRelation = WearRelation.over;
     final selectedLayers = buildMergeLayerInfoFromSelection(
@@ -236,14 +331,16 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                           onChanged: (v) => setState(() {
                             topType = v;
                             topIndex = 0;
+                            _selectionApplied = false;
                           }),
                         ),
                         color: _colorDropdown(
                           value: topColor,
                           values: availableTopColors,
-                          onChanged: (v) => setState(() {
+                        onChanged: (v) => setState(() {
                             topColor = v;
                             topIndex = 0;
+                            _selectionApplied = false;
                           }),
                         ),
                       ),
@@ -257,14 +354,16 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                           onChanged: (v) => setState(() {
                             bottomType = v;
                             bottomIndex = 0;
+                            _selectionApplied = false;
                           }),
                         ),
                         color: _colorDropdown(
                           value: bottomColor,
                           values: availableBottomColors,
-                          onChanged: (v) => setState(() {
+                        onChanged: (v) => setState(() {
                             bottomColor = v;
                             bottomIndex = 0;
+                            _selectionApplied = false;
                           }),
                         ),
                       ),
@@ -278,14 +377,16 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                           onChanged: (v) => setState(() {
                             shoeType = v;
                             shoesIndex = 0;
+                            _selectionApplied = false;
                           }),
                         ),
                         color: _colorDropdown(
                           value: shoesColor,
                           values: availableShoeColors,
-                          onChanged: (v) => setState(() {
+                        onChanged: (v) => setState(() {
                             shoesColor = v;
                             shoesIndex = 0;
+                            _selectionApplied = false;
                           }),
                         ),
                       ),

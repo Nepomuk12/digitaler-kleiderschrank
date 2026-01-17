@@ -20,6 +20,7 @@ Future<void> main() async {
   Hive.registerAdapter(OutfitOccasionAdapter()); // Adapter für Outfit-Anlässe
 
   await Hive.openBox<ClothingItem>('clothing_items'); // Ã¶ffnet die Box mit gespeicherten KleidungsstÃ¼cken
+  await Hive.openBox('outfit_state'); // Persistierter Zustand fuer Outfit-Auswahl
 
   runApp(const ProviderScope(child: WardrobeApp())); // startet die App mit Riverpod-ProviderScope
 }
