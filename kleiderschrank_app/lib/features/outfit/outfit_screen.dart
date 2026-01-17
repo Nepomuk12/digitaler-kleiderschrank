@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/clothing_item_hive.dart';
 import '../../domain/merge_layer_info.dart';
 import '../../domain/tag_labels.dart';
+import '../../app_state.dart';
 import '../add_item/add_item_controller.dart';
 import '../../services/outfit_merge_service.dart';
 import 'outfit_controller.dart';
@@ -418,6 +419,13 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
           ),
           actions: [
             TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                await _addMergedToWardrobe(mergedPath);
+              },
+              child: const Text('Add to Wardrobe'),
+            ),
+            TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Schließen'),
             ),
@@ -431,6 +439,21 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
         const SnackBar(content: Text('Merge fehlgeschlagen')),
       );
     }
+  }
+
+  Future<void> _addMergedToWardrobe(String mergedPath) async {
+    try {
+      await ref.read(addItemControllerProvider.notifier).importMergedImage(mergedPath);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Merge-Bild konnte nicht importiert werden')),
+      );
+      return;
+    }
+    if (!mounted) return;
+    ref.read(addItemPrefillCategoryProvider.notifier).state = ClothingCategory.outfit;
+    ref.read(tabIndexProvider.notifier).state = 0;
   }
 
   Widget _typeDropdown<T>({

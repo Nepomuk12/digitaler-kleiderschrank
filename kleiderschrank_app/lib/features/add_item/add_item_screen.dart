@@ -38,6 +38,15 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
     // UI: Schritt-für-Schritt-Erfassung, abhängig vom Bildstatus.
     final state = ref.watch(addItemControllerProvider);
     final ctrl = ref.read(addItemControllerProvider.notifier);
+    final prefillCategory = ref.watch(addItemPrefillCategoryProvider);
+
+    if (prefillCategory != null && prefillCategory != category) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() => category = prefillCategory);
+        ref.read(addItemPrefillCategoryProvider.notifier).state = null;
+      });
+    }
 
     // Release-Date: wird beim Build aus --dart-define gesetzt (siehe Hinweis unten)
     const releaseDate = String.fromEnvironment(

@@ -176,6 +176,7 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
                     crossAxisCount: 3,
                     crossAxisSpacing: 6,
                     mainAxisSpacing: 6,
+                    childAspectRatio: 1,
                   ),
                   itemCount: filtered.length,
                   itemBuilder: (context, i) {
@@ -217,7 +218,7 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
                         borderRadius: BorderRadius.circular(10),
                       child: Image.file(
                         File(it.normalizedImagePath),
-                        fit: BoxFit.contain,
+                        fit: BoxFit.cover,
                       ),
                       ),
                     );

@@ -21,6 +21,10 @@ final addItemControllerProvider =
   return AddItemController(ref.read(clothingRepoProvider));
 });
 
+// Vorbelegung fuer den Add-Screen (z. B. aus dem Merge-Flow).
+final addItemPrefillCategoryProvider =
+    StateProvider<ClothingCategory?>((ref) => null);
+
 /// 🔹 State enthält jetzt auch Bildpfade
 // State enthält Bildpfade und Loading-Status für den Add-Flow.
 class AddItemState {
@@ -98,6 +102,33 @@ class AddItemController extends StateNotifier<AddItemState> {
   }
 
   /// 💾 Schritt 4: Item speichern
+  // Importiert ein vorhandenes Bild (z. B. Merge-Ergebnis) in den Add-Flow.
+  Future<void> importMergedImage(String sourcePath) async {
+    state = const AddItemState(loading: true);
+
+    final source = File(sourcePath);
+    if (!await source.exists()) {
+      state = const AddItemState();
+      throw StateError('Merged image not found: $sourcePath');
+    }
+
+    final dir = await getApplicationDocumentsDirectory();
+    final imagesDir = Directory('${dir.path}/images');
+    if (!await imagesDir.exists()) {
+      await imagesDir.create(recursive: true);
+    }
+
+    final id = _uuid.v4();
+    final targetPath = '${imagesDir.path}/${id}_merged.png';
+    await source.copy(targetPath);
+
+    state = AddItemState(
+      loading: false,
+      rawPath: targetPath,
+      normalizedPath: targetPath,
+    );
+  }
+
   // Schritt 4: Item aus Formularwerten erstellen und speichern.
   Future<void> saveItem({
     required ClothingCategory category,

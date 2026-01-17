@@ -51,13 +51,12 @@ class LlmPromptBuilder {
       _formatSlotLine('SHOES', shoes),
       _formatSlotLine('OUTERWEAR', outerwear),
 
-      //'hINT:',
-      //'- Do NOT generate a body, skin, face, limbs, or anatomy.',
-      //'- Do NOT generate lighting, shadows, gradients, or background.',
-      //'- Do NOT recolor, relight, sharpen, blur, or stylize.',
-      //'- Do NOT add or hallucinate any pixels not present in the input images.',
-      //'- Do NOT ask if image should be generated or recommend wearing, just create image.',
-
+      'Please strongly avoid if possible:',
+      '- Avoid to change or add body, skin, face, limbs, or anatomy.',
+      '- Avoid to change or add lighting, shadows, gradients, or background.',
+      '- Avoid to recolor, relight, sharpen, blur, or stylize.',
+      '- Do NOT add or hallucinate any pixels not present in the input images.',
+      
     ].join('\n');
   }
 

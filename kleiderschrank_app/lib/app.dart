@@ -1,25 +1,21 @@
-// Übersicht: Stateful App-Widget, das per Bottom-Navigation zwischen den vier Haupt-Screens
-// (Hinzufügen, Outfit, Verwaltung, Backup) wechselt und das ausgewählte Widget rendert.
+// よbersicht: Stateful App-Widget, das per Bottom-Navigation zwischen den vier Haupt-Screens
+// (Hinzufグgen, Outfit, Verwaltung, Backup) wechselt und das ausgewビhlte Widget rendert.
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'app_state.dart';
 import 'features/add_item/add_item_screen.dart';
 import 'features/outfit/outfit_screen.dart';
 import 'features/wardrobe/wardrobe_screen.dart';
 import 'features/backup/backup_screen.dart';
 
-class WardrobeApp extends StatefulWidget {
+class WardrobeApp extends ConsumerWidget {
   const WardrobeApp({super.key});
 
   @override
-  State<WardrobeApp> createState() => _WardrobeAppState();
-}
-
-class _WardrobeAppState extends State<WardrobeApp> {
-  int index = 0; // aktuell gewählter Tab
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final index = ref.watch(tabIndexProvider); // aktuell gewビhlter Tab
     final pages = [
-      const AddItemScreen(), // Kleidung hinzufügen
+      const AddItemScreen(), // Kleidung hinzufグgen
       const OutfitScreen(), // Outfits zusammenstellen
       const WardrobeScreen(), // Bestand verwalten
       const BackupScreen(), // Backup-Funktionen
@@ -31,7 +27,8 @@ class _WardrobeAppState extends State<WardrobeApp> {
         body: pages[index], // zeigt den Screen des aktiven Tabs
         bottomNavigationBar: NavigationBar(
           selectedIndex: index, // markiert den aktiven Tab
-          onDestinationSelected: (i) => setState(() => index = i), // Tab-Wechsel
+          onDestinationSelected: (i) =>
+              ref.read(tabIndexProvider.notifier).state = i, // Tab-Wechsel
           destinations: const [
             NavigationDestination(icon: Icon(Icons.add_a_photo), label: 'Add'),
             NavigationDestination(icon: Icon(Icons.checkroom), label: 'Outfit'),
