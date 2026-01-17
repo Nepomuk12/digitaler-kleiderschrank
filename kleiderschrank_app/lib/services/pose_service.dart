@@ -1,3 +1,5 @@
+// Aufgabe: Schnittstelle zur nativen Pose-Erkennung via MethodChannel.
+// Hauptfunktionen: Pose-Keypoints aus native Results bauen, Pose-Detektion ausloesen.
 // lib/services/pose_service.dart
 import 'dart:math';
 import 'dart:ui';
@@ -11,6 +13,7 @@ class KP {
 }
 
 KP? _kp(Map<dynamic, dynamic> m, String key) {
+  // Hilfsfunktion: Map-Eintrag in KP-Objekt umwandeln.
   final v = m[key];
   if (v == null) return null;
   return KP(
@@ -41,6 +44,7 @@ class PoseKeypoints {
   });
 
   static PoseKeypoints fromMap(Map<dynamic, dynamic> m) => PoseKeypoints(
+        // Erzeugt Keypoints-Objekt aus der nativen Ergebnis-Map.
         leftShoulder: _kp(m, 'leftShoulder'),
         rightShoulder: _kp(m, 'rightShoulder'),
         leftHip: _kp(m, 'leftHip'),
@@ -54,6 +58,7 @@ class PoseKeypoints {
       );
 
   Offset? midShoulder({double minConf = 0.35}) {
+    // Berechnet die Schulter-Mitte, wenn beide Punkte ausreichend sicher sind.
     if (leftShoulder == null || rightShoulder == null) return null;
     if (min(leftShoulder!.v, rightShoulder!.v) < minConf) return null;
     return Offset(
@@ -63,24 +68,28 @@ class PoseKeypoints {
   }
 
   double? shoulderWidth({double minConf = 0.35}) {
+    // Abstand zwischen Schultern, nur bei ausreichender Konfidenz.
     if (leftShoulder == null || rightShoulder == null) return null;
     if (min(leftShoulder!.v, rightShoulder!.v) < minConf) return null;
     return (leftShoulder!.p - rightShoulder!.p).distance;
   }
 
   Offset? midHip({double minConf = 0.35}) {
+    // Berechnet die Hueft-Mitte, wenn beide Punkte ausreichend sicher sind.
     if (leftHip == null || rightHip == null) return null;
     if (min(leftHip!.v, rightHip!.v) < minConf) return null;
     return Offset((leftHip!.p.dx + rightHip!.p.dx) / 2, (leftHip!.p.dy + rightHip!.p.dy) / 2);
   }
 
   Offset? midKnee({double minConf = 0.35}) {
+    // Berechnet die Knie-Mitte, wenn beide Punkte ausreichend sicher sind.
     if (leftKnee == null || rightKnee == null) return null;
     if (min(leftKnee!.v, rightKnee!.v) < minConf) return null;
     return Offset((leftKnee!.p.dx + rightKnee!.p.dx) / 2, (leftKnee!.p.dy + rightKnee!.p.dy) / 2);
   }
 
   Offset? midAnkle({double minConf = 0.35}) {
+    // Berechnet die Knochel-Mitte, wenn beide Punkte ausreichend sicher sind.
     if (leftAnkle == null || rightAnkle == null) return null;
     if (min(leftAnkle!.v, rightAnkle!.v) < minConf) return null;
     return Offset((leftAnkle!.p.dx + rightAnkle!.p.dx) / 2, (leftAnkle!.p.dy + rightAnkle!.p.dy) / 2);
@@ -91,6 +100,7 @@ class PoseService {
   static const MethodChannel _ch = MethodChannel('kleiderschrank/pose');
 
   Future<PoseKeypoints> detectPose(String imagePath) async {
+    // Ruft die native Pose-Erkennung auf und mappt das Ergebnis.
     final res = await _ch.invokeMethod<Map<dynamic, dynamic>>('detectPose', {'path': imagePath});
     if (res == null) {
       throw StateError('detectPose returned null');

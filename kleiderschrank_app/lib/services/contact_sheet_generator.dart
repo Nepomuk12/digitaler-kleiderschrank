@@ -1,3 +1,5 @@
+// Aufgabe: Kontaktbogen fuer Outfit-Layer erzeugen (2x2 Grid).
+// Hauptfunktionen: Kontaktbogen zeichnen, Platzhalter/Labels rendern.
 import 'dart:io';
 
 import 'package:image/image.dart' as img;
@@ -11,6 +13,7 @@ class ContactSheetGenerator {
     required List<MergeLayerInfo> layers,
     int cellSizePx = 768,
   }) async {
+    // Baut ein 2x2 Grid mit Labels und speichert es als JPEG im Temp-Ordner.
     final labelHeight = 64;
     final cellFullHeight = cellSizePx + labelHeight;
     final sheetWidth = cellSizePx * 2;
@@ -70,6 +73,7 @@ class ContactSheetGenerator {
   }
 
   MergeLayerInfo? _findLayer(List<MergeLayerInfo> layers, LayerSlot slot) {
+    // Sucht den Layer fuer einen Slot (Top/Bottom/Shoes/Outerwear).
     for (final layer in layers) {
       if (layer.slot == slot) return layer;
     }
@@ -85,6 +89,7 @@ class ContactSheetGenerator {
     required MergeLayerInfo? layer,
     required String placeholderText,
   }) {
+    // Zeichnet eine Zelle (Bild oder Platzhalter + Label).
     final imageX = x;
     final imageY = y;
     final imageW = cellSizePx;
@@ -125,6 +130,7 @@ class ContactSheetGenerator {
     int width,
     int height,
   ) {
+    // Zeichnet ein Bild mit Contain-Scale in die Zelle.
     final scale = _containScale(src.width, src.height, width, height);
     final targetW = (src.width * scale).round();
     final targetH = (src.height * scale).round();
@@ -148,6 +154,7 @@ class ContactSheetGenerator {
     int height,
     String text,
   ) {
+    // Zentriert Text innerhalb einer Zelle.
     final font = img.arial24;
     final textW = _measureTextWidth(font, text);
     final textH = font.lineHeight;
@@ -164,6 +171,7 @@ class ContactSheetGenerator {
   }
 
   void _drawLabel(img.Image canvas, int x, int y, int height, String text) {
+    // Zeichnet das Label unter der Zelle.
     final font = img.arial14;
     img.drawString(
       canvas,

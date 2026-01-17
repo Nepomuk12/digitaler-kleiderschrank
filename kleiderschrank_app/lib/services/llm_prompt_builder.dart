@@ -1,7 +1,10 @@
+// Aufgabe: Prompt-Text fuer LLMs aus der Outfit-Auswahl generieren.
+// Hauptfunktionen: Prompt zusammenbauen, Layer-Slots suchen, Labels formatieren.
 import '../domain/merge_layer_info.dart';
 
 class LlmPromptBuilder {
   String buildPrompt(List<MergeLayerInfo> layers) {
+    // Baut den kompletten Prompt aus den vorhandenen Layer-Infos.
     final top = _findLayer(layers, LayerSlot.top);
     final bottom = _findLayer(layers, LayerSlot.bottom);
     final shoes = _findLayer(layers, LayerSlot.shoes);
@@ -59,6 +62,7 @@ class LlmPromptBuilder {
   }
 
   MergeLayerInfo? _findLayer(List<MergeLayerInfo> layers, LayerSlot slot) {
+    // Sucht einen Layer fuer einen bestimmten Slot.
     for (final layer in layers) {
       if (layer.slot == slot) return layer;
     }
@@ -66,6 +70,7 @@ class LlmPromptBuilder {
   }
 
   String _formatSlotLine(String label, MergeLayerInfo? layer) {
+    // Formatiert eine Slot-Zeile fuer den Prompt.
     if (layer == null) return '$label: (none)';
     return '$label: ${layer.typeLabel} (z=${layer.zIndex})';
   }

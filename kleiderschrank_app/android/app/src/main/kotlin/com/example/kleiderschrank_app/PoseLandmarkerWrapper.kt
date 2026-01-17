@@ -1,3 +1,5 @@
+// Aufgabe: Wrapper fuer MediaPipe PoseLandmarker (Initialisierung + Inferenz).
+// Hauptfunktionen: Modell laden, Keypoints extrahieren, Ergebnis mappen.
 package com.example.kleiderschrank_app
 
 import android.content.Context
@@ -25,6 +27,7 @@ object PoseLandmarkerWrapper {
 
     private var landmarker: PoseLandmarker? = null
 
+    // Initialisiert den Landmarker einmalig, inkl. Asset-Existenzcheck.
     private fun ensureInit(context: Context) {
         if (landmarker != null) return
 
@@ -39,10 +42,12 @@ object PoseLandmarkerWrapper {
                 e,
             )
         }
+        // Basis-Optionen und Modellpfad setzen.
         val baseOptions = BaseOptions.builder()
             .setModelAssetPath(modelPath)
             .build()
 
+        // Landmarker-Optionen fuer Einzelbild-Inferenz.
         val options = PoseLandmarker.PoseLandmarkerOptions.builder()
             .setBaseOptions(baseOptions)
             .setRunningMode(RunningMode.IMAGE)
@@ -56,6 +61,7 @@ object PoseLandmarkerWrapper {
         landmarker = PoseLandmarker.createFromOptions(context, options)
     }
 
+        // Konvertiert einen Landmark in px-Koordinaten + Confidence-Werte.
         private fun pt(p: NormalizedLandmark, bitmapW: Int, bitmapH: Int): Map<String, Double> {
         fun asDouble(x: Any?): Double = when (x) {
             is Number -> x.toDouble()
@@ -79,6 +85,7 @@ object PoseLandmarkerWrapper {
     }
 
 
+    // Fuehrt Pose-Detektion aus und liefert Keypoints als Map fuer Flutter.
     fun detect(context: Context, bitmap: Bitmap): Map<String, Map<String, Double>> {
         ensureInit(context)
 

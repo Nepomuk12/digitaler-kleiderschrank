@@ -1,3 +1,5 @@
+// Aufgabe: Bilder in Groesse/Qualitaet normalisieren fuer stabile Verarbeitung.
+// Hauptfunktionen: Resize auf max. Pixel, JPEG-Encode im Hintergrund-Isolate.
 import 'dart:io';
 import 'dart:math';
 
@@ -11,6 +13,7 @@ class ImageNormalizer {
     int maxPixels = 1200000,
     int jpegQuality = 80,
   }) async {
+    // Fuehrt Resize/Encode asynchron im Background-Isolate aus.
     final args = _NormalizeArgs(
       inputPath: input.path,
       outputPath: output.path,
@@ -40,6 +43,7 @@ class _NormalizeArgs {
 }
 
 /// Top-level Funktion (Pflicht für compute)
+// Hintergrund-Worker: laedt, resizt und schreibt das Bild.
 Future<void> _normalizeWorker(_NormalizeArgs args) async {
   final input = File(args.inputPath);
   final output = File(args.outputPath);

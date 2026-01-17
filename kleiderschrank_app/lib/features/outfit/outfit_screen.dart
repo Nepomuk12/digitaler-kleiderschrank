@@ -1,3 +1,5 @@
+// Aufgabe: Outfit-Zusammenstellung mit Filtern, Swipe-Auswahl und Merge-UI.
+// Hauptfunktionen: Filterlogik, Auswahl-UI, Merge-Ausführung und Ergebnisanzeige.
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -42,6 +44,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
   final OutfitMergeService _mergeService = const OutfitMergeService();
 
   int _wrap(int i, int len) {
+    // Hält Indizes zyklisch im Bereich der Liste.
     if (len <= 0) return 0;
     final r = i % len;
     return r < 0 ? r + len : r;
@@ -53,6 +56,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
   /* ================= FILTER LOGIC ================= */
 
   List<ClothingItem> _filterTops(List<ClothingItem> items) {
+    // Filtert Oberteile anhand des aktuellen Typ-/Farbfilters.
     return items.where((it) {
       if (topType != null && it.topType != topType) return false;
       if (topColor != null && it.color != topColor) return false;
@@ -61,6 +65,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
   }
 
   List<ClothingItem> _filterBottoms(List<ClothingItem> items) {
+    // Filtert Unterteile anhand des aktuellen Typ-/Farbfilters.
     return items.where((it) {
       if (bottomType != null && it.bottomType != bottomType) return false;
       if (bottomColor != null && it.color != bottomColor) return false;
@@ -69,6 +74,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
   }
 
   List<ClothingItem> _filterShoes(List<ClothingItem> items) {
+    // Filtert Schuhe anhand des aktuellen Typ-/Farbfilters.
     return items.where((it) {
       if (shoeType != null && it.shoeType != shoeType) return false;
       if (shoesColor != null && it.color != shoesColor) return false;
@@ -84,6 +90,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
     bool Function(ClothingItem) where,
     String Function(T) label,
   ) {
+    // Baut verfügbare Typen aus den Items und sortiert sie nach Label.
     final set = <T>{};
     for (final it in items) {
       if (!where(it)) continue;
@@ -99,6 +106,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
     List<ClothingItem> items,
     bool Function(ClothingItem) where,
   ) {
+    // Baut verfügbare Farben aus den Items und sortiert sie.
     final set = <ColorTag>{};
     for (final it in items) {
       if (!where(it)) continue;
@@ -111,6 +119,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // UI: linke Filterspalte, rechte Outfit-Vorschau mit Swipe-Auswahl.
     final repo = ref.read(clothingRepoProvider);
 
     // Rohdaten
@@ -365,6 +374,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
     List<ClothingItem> bottoms,
     List<ClothingItem> shoes,
   ) async {
+    // Führt den Merge durch, zeigt Loading-Dialog und Ergebnis-Popup.
     final top = _current(tops, topIndex);
     final bottom = _current(bottoms, bottomIndex);
     final shoesIt = _current(shoes, shoesIndex);
@@ -429,6 +439,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
     required String Function(T) label,
     required ValueChanged<T?> onChanged,
   }) {
+    // Generische Typ-Auswahl für Filter.
     return DropdownButtonFormField<T?>(
       value: value,
       isExpanded: true,
@@ -455,6 +466,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
     required List<ColorTag> values,
     required ValueChanged<ColorTag?> onChanged,
   }) {
+    // Farb-Auswahl für Filter.
     return DropdownButtonFormField<ColorTag?>(
       value: value,
       isExpanded: true,
@@ -482,6 +494,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
 // ===== Replace your current _MergeBlock with this version =====
 
 String _layerLabel(MergeLayer l) {
+  // Label für das Dropdown der Layer-Reihenfolge.
   switch (l) {
     case MergeLayer.top:
       return 'TopLayer';
@@ -588,6 +601,7 @@ class _MergeBlock extends StatelessWidget {
     required MergeLayer value,
     required ValueChanged<MergeLayer> onChanged,
   }) {
+    // Dropdown für die Layer-Zuordnung einer Kategorie.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

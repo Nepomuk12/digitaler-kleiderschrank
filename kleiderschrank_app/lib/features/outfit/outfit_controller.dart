@@ -1,3 +1,5 @@
+// Aufgabe: Steuerung fürs Outfit-Sharing (Prompt + Bilder) und Merge-Layer-Mapping.
+// Hauptfunktionen: Share zu Gemini/ChatGPT, Erzeugung von XFiles, Layer-Info bauen.
 import 'dart:io';
 
 import 'package:cross_file/cross_file.dart';
@@ -24,6 +26,7 @@ class OutfitController {
     BuildContext context,
     List<MergeLayerInfo> selectedLayers,
   ) async {
+    // Derzeit identisch zu ChatGPT-Flow (Prompt + Bilder).
     await shareToChatGPT(context, selectedLayers);
   }
 
@@ -31,6 +34,7 @@ class OutfitController {
     BuildContext context,
     List<MergeLayerInfo> selectedLayers,
   ) async {
+    // Baut Prompt, kopiert in die Zwischenablage und teilt Bilder via Share.
     final promptText = LlmPromptBuilder().buildPrompt(selectedLayers);
     await Clipboard.setData(ClipboardData(text: promptText));
     if (!context.mounted) return;
@@ -73,6 +77,7 @@ Future<List<XFile>?> _buildShareXFiles(
   BuildContext context,
   List<MergeLayerInfo> layers,
 ) async {
+  // Sammelt die Layer-Bilder im Temp-Ordner für das Teilen.
   final tempDir = await getTemporaryDirectory();
   final xfiles = <XFile>[];
   final sortedLayers = [...layers]..sort((a, b) => a.zIndex.compareTo(b.zIndex));
@@ -107,6 +112,7 @@ List<MergeLayerInfo> buildMergeLayerInfoFromSelection({
   required WearRelation topBottomRelation,
   required WearRelation bottomShoesRelation,
 }) {
+  // Übersetzt die aktuelle Auswahl in Layer-Infos für Merge/LLM.
   final layers = <MergeLayerInfo>[];
 
   if (shoes != null) {

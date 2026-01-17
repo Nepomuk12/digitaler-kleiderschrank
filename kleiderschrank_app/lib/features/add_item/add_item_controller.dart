@@ -1,3 +1,5 @@
+// Aufgabe: State/Logic zum Hinzufügen von Kleidung inkl. Bild-Handling.
+// Hauptfunktionen: Bild auswählen/zuschneiden, normalisieren, Item speichern.
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,6 +22,7 @@ final addItemControllerProvider =
 });
 
 /// 🔹 State enthält jetzt auch Bildpfade
+// State enthält Bildpfade und Loading-Status für den Add-Flow.
 class AddItemState {
   final bool loading;
   final String? rawPath;
@@ -42,6 +45,7 @@ class AddItemController extends StateNotifier<AddItemState> {
   final Uuid _uuid = const Uuid();
 
   /// 📸 Schritt 1: Bild aufnehmen / wählen
+  // Schritt 1: Bild aufnehmen/auswählen, zuschneiden und normalisieren.
   Future<void> pickImage(ImageSource source) async {
     state = const AddItemState(loading: true);
 
@@ -94,6 +98,7 @@ class AddItemController extends StateNotifier<AddItemState> {
   }
 
   /// 💾 Schritt 4: Item speichern
+  // Schritt 4: Item aus Formularwerten erstellen und speichern.
   Future<void> saveItem({
     required ClothingCategory category,
     ColorTag? color,
@@ -130,6 +135,7 @@ class AddItemController extends StateNotifier<AddItemState> {
     state = const AddItemState();
   }
 
+  // Setzt den Add-Flow zurück (UI leert sich).
   void reset() {
     state = const AddItemState();
   }

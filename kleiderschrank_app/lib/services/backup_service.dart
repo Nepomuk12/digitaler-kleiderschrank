@@ -1,3 +1,5 @@
+// Aufgabe: Backup/Restore der App-Daten (Hive + Bilder).
+// Hauptfunktionen: ZIP erstellen, ZIP importieren, Dateien wiederherstellen.
 import 'dart:io';
 
 import 'package:archive/archive.dart';
@@ -10,6 +12,7 @@ class BackupService {
   static const _boxName = 'clothing_items';
 
   /// Erstellt ZIP im Cache-Verzeichnis und gibt Pfad zurück.
+  // Exportiert Hive-Dateien und Images in ein ZIP.
   static Future<File> createBackupZip() async {
     // Sicherstellen, dass Box offen ist, nicht benötigt:
     // Hive.box(_boxName);
@@ -74,6 +77,7 @@ class BackupService {
 
   /// Importiert ZIP: überschreibt Hive-Datei + images/*
   /// Hinweis: Danach App neu starten (oder mindestens Hive neu öffnen).
+  // Schliest Hive, schreibt Dateien aus dem ZIP und legt Bilder ab.
   static Future<void> restoreFromZip(File zip) async {
     // Hive schließen, damit Datei nicht gelockt ist
     await Hive.close();

@@ -1,3 +1,5 @@
+// Aufgabe: Android Build-Konfiguration fuer die Flutter-App.
+// Hauptfunktionen: SDK/Build-Typen, Ressourcen-Settings, Dependencies.
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -5,6 +7,7 @@ plugins {
 }
 
 android {
+    // Basis-Android-Config (SDK, Java/Kotlin Targets, App-ID).
     namespace = "com.example.kleiderschrank_app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -18,6 +21,7 @@ android {
     }
 
     defaultConfig {
+        // App-Identitaet und Versionswerte (von Flutter uebernommen).
         applicationId = "com.example.kleiderschrank_app"
         minSdk = maxOf(flutter.minSdkVersion, 24)
         targetSdk = flutter.targetSdkVersion
@@ -26,6 +30,7 @@ android {
     }
 
     androidResources {
+        // Verhindert Komprimierung der Model-Dateien.
         noCompress += "task"
         noCompress += "tflite"
     }
@@ -38,6 +43,7 @@ android {
 
     buildTypes {
     release {
+        // Release-Flags (Minify/Shrink bewusst deaktiviert).
         isMinifyEnabled = false
         isShrinkResources = false
         proguardFiles(

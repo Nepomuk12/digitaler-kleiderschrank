@@ -1,3 +1,5 @@
+// Aufgabe: Kleiderschrank-Übersicht mit Grid, Filtern und Item-Bearbeitung.
+// Hauptfunktionen: Filterlogik, Grid-Rendering, Bearbeiten/Löschen von Items.
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -19,6 +21,7 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
   ClothingCategory? filterCategory; // null = alle
   String? filterPick; // null = alle, sonst "type:..." oder "color:..."
 
+  // Prüft, ob ein Item den aktiven Kategorie-/Untergruppenfilter erfüllt.
   bool _matchesFilters(ClothingItem it) {
     if (filterCategory != null && it.category != filterCategory) return false;
 
@@ -55,6 +58,7 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
     ClothingCategory? cat,
     BuildContext context,
   ) {
+    // Baut dynamische Dropdown-Optionen aus den vorhandenen Items.
     // nur Items der Kategorie (oder alle, wenn null)
     final base = cat == null ? allItems : allItems.where((e) => e.category == cat).toList();
 
@@ -150,6 +154,7 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // UI: Grid mit Items + Filterleiste, Daten kommen aus Hive/Repository.
     final repo = ref.read(clothingRepoProvider);
     final box = Hive.box<ClothingItem>('clothing_items');
 
@@ -347,6 +352,7 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
   }
 
   Widget _typeDropdown() {
+    // Zeigt die passende Typ-Auswahl je Kategorie.
     switch (category) {
       case ClothingCategory.top:
         return DropdownButtonFormField<TopType>(
@@ -392,12 +398,14 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
   }
 
   void _clearTypesForCategory() {
+    // Setzt Typ-Filter zurück, wenn die Kategorie wechselt.
     topType = null;
     bottomType = null;
     shoeType = null;
   }
 
   Future<void> _editOccasions() async {
+    // Dialog zum Bearbeiten der Outfit-Anlässe.
     final temp = List<OutfitOccasion>.from(selectedOccasions);
     final result = await showDialog<List<OutfitOccasion>>(
       context: context,
@@ -457,6 +465,7 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // UI: Edit-Sheet mit Foto, Metadaten und Speichern/Löschen.
     final repo = ref.read(clothingRepoProvider);
 
     return Padding(

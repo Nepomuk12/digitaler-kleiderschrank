@@ -1,3 +1,5 @@
+// Aufgabe: UI zum Hinzufügen neuer Kleidungsstücke inklusive Foto und Metadaten.
+// Hauptfunktionen: Bildauswahl/Preview, Metadaten-Eingabe, Speichern via Controller.
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -33,6 +35,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // UI: Schritt-für-Schritt-Erfassung, abhängig vom Bildstatus.
     final state = ref.watch(addItemControllerProvider);
     final ctrl = ref.read(addItemControllerProvider.notifier);
 
@@ -43,6 +46,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
     );
 
     Widget typeDropdown() {
+      // Zeigt den Typ-Dropdown passend zur gewählten Kategorie.
       switch (category) {
         case ClothingCategory.top:
           return DropdownButtonFormField<TopType>(
@@ -88,6 +92,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
     }
 
     Widget tipText() {
+      // Kurze Hinweise für bessere Fotoqualität.
       const style = TextStyle(
         color: Colors.black54,
         fontSize: 13,
@@ -106,6 +111,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
     }
 
     Widget footer() {
+      // Versions-/Release-Hinweis im Footer.
       return const Text(
         'Version 1.2.3a\n'
         'Release Date: $releaseDate\n'
@@ -120,6 +126,7 @@ class _AddItemScreenState extends ConsumerState<AddItemScreen> {
     }
 
     Future<void> editOccasions() async {
+      // Dialog zum Auswählen von Outfit-Anlässen.
       final temp = List<OutfitOccasion>.from(selectedOccasions);
       final result = await showDialog<List<OutfitOccasion>>(
         context: context,

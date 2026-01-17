@@ -1,3 +1,5 @@
+// Aufgabe: Bild-Merge fuer Outfits (Layer, Alignment, Masking).
+// Hauptfunktionen: Merge-Algorithmus auswaehlen, Bilder ausrichten, Overlap mischen.
 // lib/services/outfit_merge_service.dart
 import 'dart:io';
 import 'dart:math';
@@ -49,6 +51,7 @@ class OutfitMergeService {
     required MergeLayer bottomLayer,
     required MergeLayer shoesLayer,
   }) async {
+    // Entrypoint: waehlt den Merge-Algorithmus aus und liefert PNG-Pfad.
     switch (MergeConfig.algorithm) {
       case OutfitMergeAlgorithm.smartAnchoredZonesV1:
         // NEU: Dynamische Höhe (≈ Summe der Einzelbilder), Overlap nur in den Übergängen
@@ -86,6 +89,7 @@ class OutfitMergeService {
   required MergeLayer bottomLayer,
   required MergeLayer shoesLayer,
 }) async {
+  // Merge mit dynamischer Hoehe, Alpha-Crop und intelligentem Overlap.
   final canvasW = MergeConfig.outWidth.toInt();
 
   final aligned = await _loadAlignedImages(
@@ -226,6 +230,7 @@ class OutfitMergeService {
     required MergeLayer bottomLayer,
     required MergeLayer shoesLayer,
   }) async {
+    // Fallback: simple Layer-Overlay (debug/vergleichbar).
     final canvasW = MergeConfig.outWidth;
     final canvasH = MergeConfig.outHeight;
 
@@ -277,6 +282,7 @@ class OutfitMergeService {
   // ---------------------------------------------------------------------------
 
   Future<ui.Image> _loadUiImage(String path) async {
+    // Laedt ein Bild als ui.Image aus der Datei.
     final data = await File(path).readAsBytes();
     final codec = await ui.instantiateImageCodec(data);
     final frame = await codec.getNextFrame();
@@ -291,6 +297,7 @@ class OutfitMergeService {
     required MergeLayer bottomLayer,
     required MergeLayer shoesLayer,
   }) async {
+    // Optionales Pose-basiertes Alignment fuer die Einzelteile.
     final topImg = await _loadUiImage(top.normalizedImagePath);
     final bottomImg = await _loadUiImage(bottom.normalizedImagePath);
     final shoesImg = await _loadUiImage(shoes.normalizedImagePath);
@@ -357,6 +364,7 @@ class OutfitMergeService {
     required MergeLayer bottomLayer,
     required MergeLayer shoesLayer,
   }) {
+    // Waehlt das Referenzbild fuer die Ausrichtung (hoeherer Z-Index zuerst).
     final entries = <({int z, MergeInput input})>[
       (z: topLayer.z, input: top),
       (z: bottomLayer.z, input: bottom),
@@ -371,6 +379,7 @@ class OutfitMergeService {
   }
 
   bool _isSameInput(MergeInput a, MergeInput b) {
+    // Vergleich von Input-Identitaet (Pfad + Kategorie).
     return a.normalizedImagePath == b.normalizedImagePath && a.categoryOrder == b.categoryOrder;
   }
 
@@ -387,6 +396,7 @@ class OutfitMergeService {
   }
 
   _PoseGeom? _poseGeomFrom(PoseKeypoints pose, double minConf) {
+    // Extrahiert einfache Geometrie (Schulter/Huefte) aus Pose-Keypoints.
     final shoulderMid = pose.midShoulder(minConf: minConf);
     final hipMid = pose.midHip(minConf: minConf);
     final shoulderWidth = pose.shoulderWidth(minConf: minConf);
@@ -410,6 +420,7 @@ class OutfitMergeService {
     required int outW,
     required int outH,
   }) async {
+    // Transformiert ein Bild auf die Referenz-Posen-Geometrie.
     final scale = refGeom.shoulderWidth / srcGeom.shoulderWidth;
     if (!scale.isFinite || scale <= 0) return srcImg;
 
@@ -737,6 +748,7 @@ void _blendOverlap({
   required int waistY,
   required bool isWaist,
 }) {
+  // Mischt die Overlap-Zone mit heuristischen Regeln und optionalem Feathering.
   final h = out.length ~/ (canvasW * 4);
   final yy0 = max(0, min(h, y0));
   final yy1 = max(0, min(h, y1));
@@ -866,6 +878,7 @@ void _blendOverlap({
 }
 
 Future<Uint8List> _rgbaToPng(Uint8List rgba, int w, int h) async {
+  // Konvertiert ein RGBA-Array in PNG-Bytes.
   final completer = Completer<Uint8List>();
   ui.decodeImageFromPixels(
     rgba,

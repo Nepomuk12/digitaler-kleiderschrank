@@ -1,3 +1,5 @@
+// Aufgabe: Android-Bruecke fuer Flutter-MethodChannel (Pose-Detektion).
+// Hauptfunktionen: MethodChannel einrichten, Bild laden, Pose ausfuehren.
 package com.example.kleiderschrank_app
 
 import android.graphics.BitmapFactory
@@ -12,6 +14,7 @@ class MainActivity : FlutterActivity() {
     private val CHANNEL = "kleiderschrank/pose"
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
+        // Registriert den MethodChannel und verarbeitet native Calls.
         super.configureFlutterEngine(flutterEngine)
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)

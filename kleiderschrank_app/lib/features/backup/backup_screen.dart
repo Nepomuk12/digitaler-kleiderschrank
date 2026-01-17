@@ -1,3 +1,5 @@
+// Aufgabe: Backup-Export/Import der App-Daten via ZIP.
+// Hauptfunktionen: Backup erstellen, ZIP teilen, Backup wiederherstellen.
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -17,6 +19,7 @@ class _BackupScreenState extends State<BackupScreen> {
   bool busy = false;
 
   Future<void> _export() async {
+    // Erstellt ein ZIP-Backup und teilt es über das Share-Menü.
     setState(() => busy = true);
     try {
       final zip = await BackupService.createBackupZip();
@@ -35,6 +38,7 @@ class _BackupScreenState extends State<BackupScreen> {
   }
 
   Future<void> _import() async {
+    // Wählt ein ZIP aus und spielt das Backup zurück.
     setState(() => busy = true);
     try {
       final res = await FilePicker.platform.pickFiles(
@@ -69,6 +73,7 @@ class _BackupScreenState extends State<BackupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // UI: zwei Aktionen (Export/Import) plus Busy-Indicator.
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Center(
