@@ -28,16 +28,17 @@ class LlmPromptBuilder {
 
       'OPERATION:',
       '- Stack the provided clothing images vertically to form one full outfit.',
-      '- Crop the final image to the minimal bounding box containing all non-transparent pixels.',
+      //'- Crop the final image to the minimal bounding box containing all non-transparent pixels.',
+      '- Crop or extend the final image to 9:16 aspect ratio; portrait orientation .',
       '- Do NOT recolor, relight, resize, enhance, or stylize the garments in any way.',
 
       'REQUIREMENTS, please try to :',
-      '- Preserve ORIGINAL COLORS, texture, seams, logos, and shading of each garment exactly.',
+      '- Preserve ORIGINAL COLORS, texture, seams, logos, aspect ratio and shading of each garment exactly.',
       '- NO color correction, NO relighting, NO contrast boost, NO enhancement, NO style transfer.',
       '- Do NOT add extra body parts (arms/torso/underwear). Do not hallucinate new clothing.',
       '- Output framing: include FULL shoes and add visible floor below shoes (at least 8% image height). Never crop bottom at feet.',
       '- Crop ONLY at the top: start at NOSE (nose visible, eyes/forehead/hair NOT visible). Neutral background.',
-      '- Nur bei bauchfreien Tops/ Kurzen Blusen / Mesh: sichtbaren Haut/Bauch/Bauchnabel statt Hautfarbenem Body zeigen.',
+      '- Only with midriff‑bearing tops / short blouses / mesh: show visible skin/stomach/belly button instead of a skin‑colored bodysuit.',
 
       'LAYER / OCCLUSION RULES',
       '- Use zIndex values only as occlusion priority (higher z covers lower z).',

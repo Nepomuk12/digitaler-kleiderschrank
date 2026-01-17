@@ -5,9 +5,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:path/path.dart' as p;
 
+import '../../data/clothing_repository.dart';
 import '../../domain/clothing_item_hive.dart';
 import '../../domain/tag_labels.dart';
+import '../../services/image_normalizer.dart';
 import '../add_item/add_item_controller.dart';
 
 class WardrobeScreen extends ConsumerStatefulWidget {
@@ -20,6 +24,11 @@ class WardrobeScreen extends ConsumerStatefulWidget {
 class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
   ClothingCategory? filterCategory; // null = alle
   String? filterPick; // null = alle, sonst "type:..." oder "color:..."
+
+  T? _safeDropdownValue<T>(T? current, Set<T> available) {
+    if (current == null) return null;
+    return available.contains(current) ? current : null;
+  }
 
   // Prüft, ob ein Item den aktiven Kategorie-/Untergruppenfilter erfüllt.
   bool _matchesFilters(ClothingItem it) {
@@ -152,10 +161,51 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
     return items;
   }
 
+  // Speichert ein Item als aktuelle Outfit-Auswahl und bereinigt widersprechende Filter.
+  Future<void> _useInCurrentOutfit(ClothingItem it) async {
+    final stateBox = Hive.box('outfit_state');
+
+    switch (it.category) {
+      case ClothingCategory.top:
+        stateBox.put('topId', it.id);
+        if (stateBox.get('topType') != null && it.topType?.name != stateBox.get('topType')) {
+          stateBox.put('topType', null);
+        }
+        if (stateBox.get('topColor') != null && it.color?.name != stateBox.get('topColor')) {
+          stateBox.put('topColor', null);
+        }
+        break;
+      case ClothingCategory.bottom:
+        stateBox.put('bottomId', it.id);
+        if (stateBox.get('bottomType') != null &&
+            it.bottomType?.name != stateBox.get('bottomType')) {
+          stateBox.put('bottomType', null);
+        }
+        if (stateBox.get('bottomColor') != null && it.color?.name != stateBox.get('bottomColor')) {
+          stateBox.put('bottomColor', null);
+        }
+        break;
+      case ClothingCategory.shoes:
+        stateBox.put('shoesId', it.id);
+        if (stateBox.get('shoeType') != null && it.shoeType?.name != stateBox.get('shoeType')) {
+          stateBox.put('shoeType', null);
+        }
+        if (stateBox.get('shoesColor') != null && it.color?.name != stateBox.get('shoesColor')) {
+          stateBox.put('shoesColor', null);
+        }
+        break;
+      case ClothingCategory.outerwear:
+        // aktuell kein Outfit-Slot fuer Outerwear
+        break;
+      case ClothingCategory.outfit:
+        // gespeicherte Outfits werden hier nicht in Slots gemappt
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // UI: Grid mit Items + Filterleiste, Daten kommen aus Hive/Repository.
-    final repo = ref.read(clothingRepoProvider);
     final box = Hive.box<ClothingItem>('clothing_items');
 
     return SafeArea(
@@ -195,8 +245,10 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
                         final ok = await showDialog<bool>(
                           context: context,
                           builder: (_) => AlertDialog(
-                            title: const Text('Löschen?'),
-                            content: const Text('Item und Foto werden gelöscht.'),
+                            title: const Text('Im aktuellen Outfit nutzen?'),
+                            content: const Text(
+                              'Soll dieses Element im aktuellen Outfit angezeigt werden?',
+                            ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context, false),
@@ -204,14 +256,14 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
                               ),
                               FilledButton(
                                 onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Löschen'),
+                                child: const Text('Ja'),
                               ),
                             ],
                           ),
                         );
 
                         if (ok == true) {
-                          await repo.deleteItem(it.id);
+                          await _useInCurrentOutfit(it);
                         }
                       },
                       child: ClipRRect(
@@ -248,6 +300,17 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
               ];
 
               final pickItems = _buildFilterPickItems(all, filterCategory, context);
+              final pickAvailable = pickItems
+                  .map((e) => e.value)
+                  .whereType<String>()
+                  .toSet();
+              final safePick = _safeDropdownValue(filterPick, pickAvailable);
+              if (safePick != filterPick) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  setState(() => filterPick = safePick);
+                });
+              }
 
               return Container(
                 decoration: BoxDecoration(
@@ -283,7 +346,7 @@ class _WardrobeScreenState extends ConsumerState<WardrobeScreen> {
                     // Untergruppe/Farbe (kombiniert)
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: filterPick,
+                        value: safePick,
                         isExpanded: true,
                         items: pickItems,
                         onChanged: (v) => setState(() => filterPick = v),
@@ -333,6 +396,9 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
   ShoeType? shoeType;
   List<OutfitOccasion> selectedOccasions = [];
   final _brandCtrl = TextEditingController();
+  bool _recropBusy = false;
+  late String _currentNormalizedPath;
+  int _recropVersion = 0;
 
   @override
   void initState() {
@@ -344,12 +410,115 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
     shoeType = widget.item.shoeType;
     selectedOccasions = List<OutfitOccasion>.from(widget.item.occasions);
     _brandCtrl.text = widget.item.brandNotes ?? '';
+    _currentNormalizedPath = widget.item.normalizedImagePath;
   }
 
   @override
   void dispose() {
     _brandCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _reCropFromOriginal(ClothingRepository repo) async {
+    if (_recropBusy) return;
+    final rawPath = widget.item.rawImagePath;
+    if (rawPath == null || rawPath.isEmpty || !File(rawPath).existsSync()) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Originalfoto nicht vorhanden.')),
+      );
+      return;
+    }
+    final rawPathValue = rawPath;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Item neu zuschneiden?'),
+        content: const Text(
+          'Möchtest du dieses Item neu zuschneiden? Das Originalfoto wird verwendet und das zugeschnittene Bild wird ersetzt.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Ja'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _recropBusy = true);
+    try {
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: rawPathValue,
+        compressFormat: ImageCompressFormat.jpg,
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Zuschneiden',
+            lockAspectRatio: false,
+            hideBottomControls: false,
+          ),
+        ],
+      );
+
+      if (cropped == null) return;
+
+      final normalizedPath = widget.item.normalizedImagePath;
+      final normPath = normalizedPath.isNotEmpty
+          ? normalizedPath
+          : p.join(p.dirname(rawPathValue), '${widget.item.id}_norm.jpg');
+
+      await ImageNormalizer.resizeToMaxPixels(
+        input: File(cropped.path),
+        output: File(normPath),
+        maxPixels: 2000000,
+        jpegQuality: 85,
+      );
+
+      // Cache des alten Bildes loeschen, damit die neue Datei angezeigt wird.
+      await PaintingBinding.instance.imageCache
+          .evict(FileImage(File(normPath)));
+
+      final updated = ClothingItem(
+        id: widget.item.id,
+        category: widget.item.category,
+        imagePath: normPath,
+        rawImagePath: rawPathValue,
+        normalizedImagePath: normPath,
+        createdAt: widget.item.createdAt,
+        tags: widget.item.tags,
+        color: widget.item.color,
+        topType: widget.item.topType,
+        bottomType: widget.item.bottomType,
+        shoeType: widget.item.shoeType,
+        occasions: widget.item.occasions,
+        brandNotes: widget.item.brandNotes,
+      );
+
+      await repo.upsertItem(updated);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Zuschneiden abgeschlossen')),
+      );
+      setState(() {
+        _currentNormalizedPath = normPath;
+        _recropVersion++;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fehler beim Zuschneiden: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _recropBusy = false);
+    }
   }
 
   Widget _typeDropdown() {
@@ -481,16 +650,24 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             // 1) FOTO GROSS (neu)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: AspectRatio(
-                aspectRatio: 3 / 4,
-                child: Image.file(
-                  File(widget.item.normalizedImagePath),
-                  fit: BoxFit.contain,
+            GestureDetector(
+              onLongPress: _recropBusy ? null : () => _reCropFromOriginal(repo),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: AspectRatio(
+                  aspectRatio: 3 / 4,
+                  child: Image.file(
+                    File(_currentNormalizedPath),
+                    key: ValueKey(_recropVersion),
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),
+            if (_recropBusy) ...[
+              const SizedBox(height: 8),
+              const LinearProgressIndicator(),
+            ],
             const SizedBox(height: 12),
 
             // Kategorie
@@ -562,30 +739,32 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
                 Expanded(
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.delete_outline),
-                    label: const Text('Löschen'),
-                    onPressed: () async {
-                      final ok = await showDialog<bool>(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text('Löschen?'),
-                          content: const Text('Item und Foto werden gelöscht.'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Abbrechen'),
-                            ),
-                            FilledButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Löschen'),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (ok == true) {
-                        await repo.deleteItem(widget.item.id);
-                        if (context.mounted) Navigator.pop(context);
-                      }
-                    },
+                    label: const Text('Loeschen'),
+                    onPressed: _recropBusy
+                        ? null
+                        : () async {
+                            final ok = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: const Text('Loeschen?'),
+                                content: const Text('Item und Foto werden geloescht.'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, false),
+                                    child: const Text('Abbrechen'),
+                                  ),
+                                  FilledButton(
+                                    onPressed: () => Navigator.pop(context, true),
+                                    child: const Text('Loeschen'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (ok == true) {
+                              await repo.deleteItem(widget.item.id);
+                              if (context.mounted) Navigator.pop(context);
+                            }
+                          },
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -593,36 +772,38 @@ class _EditItemSheetState extends ConsumerState<_EditItemSheet> {
                   child: FilledButton.icon(
                     icon: const Icon(Icons.save),
                     label: const Text('Speichern'),
-                  onPressed: () async {
-                    final isOutfit = category == ClothingCategory.outfit;
-                    final updated = ClothingItem(
-                      id: widget.item.id,
-                      category: category,
+                    onPressed: _recropBusy
+                        ? null
+                        : () async {
+                            final isOutfit = category == ClothingCategory.outfit;
+                            final updated = ClothingItem(
+                              id: widget.item.id,
+                              category: category,
 
-                        // Übergang
-                        imagePath: widget.item.normalizedImagePath,
+                              // ?bergang
+                              imagePath: _currentNormalizedPath,
 
-                        // Pflichtfelder korrekt weiterreichen
-                        rawImagePath: widget.item.rawImagePath,
-                        normalizedImagePath: widget.item.normalizedImagePath,
+                              // Pflichtfelder korrekt weiterreichen
+                              rawImagePath: widget.item.rawImagePath,
+                              normalizedImagePath: _currentNormalizedPath,
 
-                      createdAt: widget.item.createdAt,
-                      tags: widget.item.tags,
-                      color: isOutfit ? null : color,
-                      topType: topType,
-                      bottomType: bottomType,
-                      shoeType: shoeType,
-                      occasions: isOutfit ? selectedOccasions : const [],
-                      brandNotes: _brandCtrl.text.trim().isEmpty
-                          ? null
-                          : _brandCtrl.text.trim(),
+                              createdAt: widget.item.createdAt,
+                              tags: widget.item.tags,
+                              color: isOutfit ? null : color,
+                              topType: topType,
+                              bottomType: bottomType,
+                              shoeType: shoeType,
+                              occasions: isOutfit ? selectedOccasions : const [],
+                              brandNotes: _brandCtrl.text.trim().isEmpty
+                                  ? null
+                                  : _brandCtrl.text.trim(),
 
-                      // Brand/Notes falls vorhanden im Model:
-                    );
+                              // Brand/Notes falls vorhanden im Model:
+                            );
 
-                      await repo.upsertItem(updated);
-                      if (context.mounted) Navigator.pop(context);
-                    },
+                            await repo.upsertItem(updated);
+                            if (context.mounted) Navigator.pop(context);
+                          },
                   ),
                 ),
               ],

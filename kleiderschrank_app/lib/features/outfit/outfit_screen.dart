@@ -61,6 +61,11 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
   ClothingItem? _current(List<ClothingItem> list, int i) =>
       list.isEmpty ? null : list[_wrap(i, list.length)];
 
+  T? _safeDropdownValue<T>(T? current, Set<T> available) {
+    if (current == null) return null;
+    return available.contains(current) ? current : null;
+  }
+
   /* ================= FILTER LOGIC ================= */
 
   List<ClothingItem> _filterTops(List<ClothingItem> items) {
@@ -257,6 +262,67 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
       (e) => shoeType == null || e.shoeType == shoeType,
     );
 
+    final safeTopType = _safeDropdownValue(topType, availableTopTypes.toSet());
+    if (safeTopType != topType) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          topType = safeTopType;
+          topIndex = 0;
+        });
+      });
+    }
+    final safeTopColor = _safeDropdownValue(topColor, availableTopColors.toSet());
+    if (safeTopColor != topColor) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          topColor = safeTopColor;
+          topIndex = 0;
+        });
+      });
+    }
+    final safeBottomType = _safeDropdownValue(bottomType, availableBottomTypes.toSet());
+    if (safeBottomType != bottomType) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          bottomType = safeBottomType;
+          bottomIndex = 0;
+        });
+      });
+    }
+    final safeBottomColor = _safeDropdownValue(bottomColor, availableBottomColors.toSet());
+    if (safeBottomColor != bottomColor) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          bottomColor = safeBottomColor;
+          bottomIndex = 0;
+        });
+      });
+    }
+    final safeShoeType = _safeDropdownValue(shoeType, availableShoeTypes.toSet());
+    if (safeShoeType != shoeType) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          shoeType = safeShoeType;
+          shoesIndex = 0;
+        });
+      });
+    }
+    final safeShoesColor = _safeDropdownValue(shoesColor, availableShoeColors.toSet());
+    if (safeShoesColor != shoesColor) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          shoesColor = safeShoesColor;
+          shoesIndex = 0;
+        });
+      });
+    }
+
     /* ====== FILTERED LISTS ====== */
 
     final tops = _filterTops(allTops);
@@ -325,7 +391,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                       _FilterBlock(
                         title: 'Oberteil',
                         type: _typeDropdown<TopType>(
-                          value: topType,
+                          value: safeTopType,
                           values: availableTopTypes,
                           label: topTypeLabel,
                           onChanged: (v) => setState(() {
@@ -335,9 +401,9 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                           }),
                         ),
                         color: _colorDropdown(
-                          value: topColor,
+                          value: safeTopColor,
                           values: availableTopColors,
-                        onChanged: (v) => setState(() {
+                          onChanged: (v) => setState(() {
                             topColor = v;
                             topIndex = 0;
                             _selectionApplied = false;
@@ -348,7 +414,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                       _FilterBlock(
                         title: 'Unterteil',
                         type: _typeDropdown<BottomType>(
-                          value: bottomType,
+                          value: safeBottomType,
                           values: availableBottomTypes,
                           label: bottomTypeLabel,
                           onChanged: (v) => setState(() {
@@ -358,9 +424,9 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                           }),
                         ),
                         color: _colorDropdown(
-                          value: bottomColor,
+                          value: safeBottomColor,
                           values: availableBottomColors,
-                        onChanged: (v) => setState(() {
+                          onChanged: (v) => setState(() {
                             bottomColor = v;
                             bottomIndex = 0;
                             _selectionApplied = false;
@@ -371,7 +437,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                       _FilterBlock(
                         title: 'Schuhe',
                         type: _typeDropdown<ShoeType>(
-                          value: shoeType,
+                          value: safeShoeType,
                           values: availableShoeTypes,
                           label: shoeTypeLabel,
                           onChanged: (v) => setState(() {
@@ -381,9 +447,9 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                           }),
                         ),
                         color: _colorDropdown(
-                          value: shoesColor,
+                          value: safeShoesColor,
                           values: availableShoeColors,
-                        onChanged: (v) => setState(() {
+                          onChanged: (v) => setState(() {
                             shoesColor = v;
                             shoesIndex = 0;
                             _selectionApplied = false;
