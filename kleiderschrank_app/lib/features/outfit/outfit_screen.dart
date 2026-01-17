@@ -423,7 +423,7 @@ class _OutfitScreenState extends ConsumerState<OutfitScreen> {
                 Navigator.pop(context);
                 await _addMergedToWardrobe(mergedPath);
               },
-              child: const Text('Add to Wardrobe'),
+              child: const Text('Outfit speichern'),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context),

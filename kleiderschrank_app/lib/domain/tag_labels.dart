@@ -202,43 +202,43 @@ String shoeTypeLabel(ShoeType s) {
 String outfitOccasionLabel(OutfitOccasion o) {
   switch (o) {
     case OutfitOccasion.casual:
-      return 'Freizeit / Casual';
+      return 'Freizeit';
     case OutfitOccasion.homewear:
-      return 'Homewear / Loungewear';
+      return 'Homewear';
     case OutfitOccasion.streetwear:
       return 'Streetwear';
     case OutfitOccasion.travel:
-      return 'Reise / Travel';
+      return 'Reise/Urlaub';
     case OutfitOccasion.summer:
       return 'Sommer Outfit';
     case OutfitOccasion.winter:
       return 'Winter Outfit';
     case OutfitOccasion.officeBusinessCasual:
-      return 'Büro / Business Casual';
+      return 'Büro Casual';
     case OutfitOccasion.businessFormal:
-      return 'Business / Formal';
+      return 'Büro Formal';
     case OutfitOccasion.smartCasual:
       return 'Smart Casual';
     case OutfitOccasion.appointment:
-      return 'Termin / Präsentation';
+      return 'Büro Präsentation';
     case OutfitOccasion.sportTraining:
-      return 'Sport / Training';
+      return 'Sportkleidung';
     case OutfitOccasion.outdoorHiking:
-      return 'Outdoor / Wandern';
+      return 'Wandern/Draußen';
     case OutfitOccasion.running:
-      return 'Running / Cardio';
+      return 'Laufkleidung';
     case OutfitOccasion.yoga:
-      return 'Yoga / Relax Sport';
+      return 'Yoga';
     case OutfitOccasion.dinner:
-      return 'Abend / Dinner';
+      return 'Restaurant/Dinner';
     case OutfitOccasion.clubParty:
       return 'Tanzen / Club';
     case OutfitOccasion.eventFormal:
-      return 'Event / Feierlich';
+      return 'Feierliches Event ';
     case OutfitOccasion.dateNight:
       return 'Date / FürIhn';
     case OutfitOccasion.beachHoliday:
-      return 'Urlaub / Strand';
+      return 'Strand Urlaub';
     case OutfitOccasion.rainWeather:
       return 'Schlechtwetter / Regen';
   }

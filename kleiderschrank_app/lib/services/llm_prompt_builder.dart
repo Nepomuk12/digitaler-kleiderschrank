@@ -37,6 +37,7 @@ class LlmPromptBuilder {
       '- Do NOT add extra body parts (arms/torso/underwear). Do not hallucinate new clothing.',
       '- Output framing: include FULL shoes and add visible floor below shoes (at least 8% image height). Never crop bottom at feet.',
       '- Crop ONLY at the top: start at NOSE (nose visible, eyes/forehead/hair NOT visible). Neutral background.',
+      '- Nur bei bauchfreien Tops/ Kurzen Blusen / Mesh: sichtbaren Haut/Bauch/Bauchnabel statt Hautfarbenem Body zeigen.',
 
       'LAYER / OCCLUSION RULES',
       '- Use zIndex values only as occlusion priority (higher z covers lower z).',
